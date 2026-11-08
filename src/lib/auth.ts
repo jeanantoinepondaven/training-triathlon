@@ -9,6 +9,10 @@ import { getDb, schema } from "@/db";
 const COOKIE = "tp_session";
 const MAX_AGE = 60 * 60 * 24 * 90; // 90 days: stay logged in on your phone
 
+export function sessionSecretConfigured(): boolean {
+  return !!process.env.SESSION_SECRET || process.env.NODE_ENV !== "production";
+}
+
 function secret(): Uint8Array {
   const s = process.env.SESSION_SECRET;
   if (!s) {

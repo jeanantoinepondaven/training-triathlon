@@ -4,11 +4,16 @@ import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import { count, eq } from "drizzle-orm";
 import { getDb, schema } from "@/db";
-import { createSession, destroySession } from "@/lib/auth";
+import { createSession, destroySession, sessionSecretConfigured } from "@/lib/auth";
 
 export type FormState = { error?: string } | undefined;
 
+const MISCONFIGURED: FormState = {
+  error: "Server setup incomplete: SESSION_SECRET is missing. Add it in Vercel → Settings → Environment Variables (Production), then redeploy.",
+};
+
 export async function login(_: FormState, form: FormData): Promise<FormState> {
+  if (!sessionSecretConfigured()) return MISCONFIGURED;
   const email = String(form.get("email") ?? "").trim().toLowerCase();
   const password = String(form.get("password") ?? "");
   const db = await getDb();
@@ -26,6 +31,7 @@ export async function register(_: FormState, form: FormData): Promise<FormState>
   const password = String(form.get("password") ?? "");
   if (!name || !email.includes("@")) return { error: "Enter your name and a valid email." };
   if (password.length < 8) return { error: "Password must be at least 8 characters." };
+  if (!sessionSecretConfigured()) return MISCONFIGURED;
 
   // Private app: only the listed emails (or the first MAX_USERS people) can sign up.
   const allowed = (process.env.ALLOWED_EMAILS ?? "")
@@ -35,9 +41,12 @@ export async function register(_: FormState, form: FormData): Promise<FormState>
   if (allowed.length && !allowed.includes(email)) return { error: "This email isn't invited to this app." };
 
   const db = await getDb();
-  const [{ n }] = await db.select({ n: count() }).from(schema.users);
-  const max = Number(process.env.MAX_USERS ?? 2);
-  if (n >= max) return { error: "This app is full. Ask the owner to raise MAX_USERS." };
+  // With an allowlist, the list itself is the gate; otherwise cap the number of accounts.
+  if (!allowed.length) {
+    const [{ n }] = await db.select({ n: count() }).from(schema.users);
+    const max = Number(process.env.MAX_USERS ?? 2);
+    if (n >= max) return { error: "This app is full. Set ALLOWED_EMAILS (or raise MAX_USERS) in Vercel." };
+  }
 
   const [existing] = await db.select().from(schema.users).where(eq(schema.users.email, email));
   if (existing) return { error: "An account with this email already exists. Log in instead." };
