@@ -1,0 +1,81 @@
+import "server-only";
+import { and, asc, desc, eq, gte, lte, inArray } from "drizzle-orm";
+import { getDb, schema } from "@/db";
+import type { CurrentUser } from "./auth";
+
+const { users, cycles, workouts } = schema;
+
+export async function listUsers() {
+  const db = await getDb();
+  return db.select({ id: users.id, name: users.name }).from(users).orderBy(asc(users.createdAt));
+}
+
+/** Both partners can read each other's plans; only the owner can change them. */
+export async function getWorkoutsBetween(userId: string, from: string, to: string) {
+  const db = await getDb();
+  return db
+    .select()
+    .from(workouts)
+    .where(and(eq(workouts.userId, userId), gte(workouts.date, from), lte(workouts.date, to)))
+    .orderBy(asc(workouts.date), asc(workouts.position), asc(workouts.createdAt));
+}
+
+export async function getWorkout(id: string) {
+  const db = await getDb();
+  const [w] = await db.select().from(workouts).where(eq(workouts.id, id));
+  return w ?? null;
+}
+
+export async function getOwnedWorkout(user: CurrentUser, id: string) {
+  const w = await getWorkout(id);
+  return w && w.userId === user.id ? w : null;
+}
+
+export async function listCycles(userId: string) {
+  const db = await getDb();
+  const cs = await db.select().from(cycles).where(eq(cycles.userId, userId)).orderBy(desc(cycles.startDate));
+  if (!cs.length) return [];
+  const ws = await db
+    .select({ cycleId: workouts.cycleId, status: workouts.status, date: workouts.date })
+    .from(workouts)
+    .where(inArray(workouts.cycleId, cs.map((c) => c.id)));
+  return cs.map((c) => {
+    const mine = ws.filter((w) => w.cycleId === c.id);
+    return {
+      ...c,
+      total: mine.length,
+      done: mine.filter((w) => w.status === "done").length,
+      skipped: mine.filter((w) => w.status === "skipped").length,
+    };
+  });
+}
+
+/** Cycles overlapping a date range, for week headers. */
+export async function getCyclesForRange(userId: string, from: string, to: string) {
+  const db = await getDb();
+  const cs = await db.select().from(cycles).where(and(eq(cycles.userId, userId), lte(cycles.startDate, to)));
+  return cs.filter((c) => {
+    const end = new Date(Date.parse(c.startDate) + c.weeks * 7 * 86400000).toISOString().slice(0, 10);
+    return end > from;
+  });
+}
+
+export async function getAllWorkouts(userId: string) {
+  const db = await getDb();
+  return db.select().from(workouts).where(eq(workouts.userId, userId)).orderBy(asc(workouts.date));
+}
+
+/** Most recent logged sets for each exercise name, before a given workout. */
+export async function getLastPerformance(userId: string, names: string[], excludeId: string) {
+  const all = await getAllWorkouts(userId);
+  const out: Record<string, { date: string; sets: { reps: number | null; weightKg: number | null }[] }> = {};
+  const wanted = new Set(names.map((n) => n.toLowerCase()));
+  for (const w of all) {
+    if (w.id === excludeId || w.status !== "done" || w.log?.kind !== "gym") continue;
+    for (const e of w.log.exercises) {
+      const k = e.name.toLowerCase();
+      if (wanted.has(k) && e.sets.length && (!out[k] || out[k].date <= w.date)) out[k] = { date: w.date, sets: e.sets };
+    }
+  }
+  return out;
+}
