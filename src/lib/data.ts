@@ -79,3 +79,21 @@ export async function getLastPerformance(userId: string, names: string[], exclud
   }
   return out;
 }
+
+/** Per-week completion for cycles: { [cycleId]: { [week]: { total, done } } }. */
+export async function getCycleWeekStats(cycleIds: string[]) {
+  const out: Record<string, Record<number, { total: number; done: number }>> = {};
+  if (!cycleIds.length) return out;
+  const db = await getDb();
+  const rows = await db
+    .select({ cycleId: workouts.cycleId, week: workouts.week, status: workouts.status })
+    .from(workouts)
+    .where(inArray(workouts.cycleId, cycleIds));
+  for (const r of rows) {
+    if (!r.cycleId || !r.week) continue;
+    const wk = ((out[r.cycleId] ??= {})[r.week] ??= { total: 0, done: 0 });
+    if (r.status !== "skipped") wk.total++;
+    if (r.status === "done") wk.done++;
+  }
+  return out;
+}

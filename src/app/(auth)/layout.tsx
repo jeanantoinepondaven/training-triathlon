@@ -1,10 +1,12 @@
+import { Logo } from "@/components/tandem/icon";
+
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-4 py-10">
-      <div className="mb-8 text-center">
-        <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl bg-accent text-xl font-bold text-white">T</div>
-        <h1 className="text-2xl font-semibold">Training</h1>
-        <p className="text-sm text-muted">Plans, cycles &amp; progress — for the two of us.</p>
+    <main className="mx-auto flex min-h-dvh max-w-[420px] flex-col justify-center gap-8 px-5 py-10">
+      <div className="flex flex-col items-center gap-3 text-center">
+        <Logo size={64} />
+        <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 30, letterSpacing: "-0.03em" }}>tandem</span>
+        <p className="m-0 text-ink-muted">Two athletes. One plan each.</p>
       </div>
       {children}
     </main>

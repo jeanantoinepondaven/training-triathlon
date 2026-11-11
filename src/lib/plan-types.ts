@@ -30,7 +30,7 @@ export type EndurancePlan = {
 export type FreePlan = { kind: "free" };
 export type WorkoutPlan = GymPlan | EndurancePlan | FreePlan;
 
-export type LoggedSet = { reps: number | null; weightKg: number | null };
+export type LoggedSet = { reps: number | null; weightKg: number | null; done?: boolean };
 export type GymLog = {
   kind: "gym";
   exercises: { name: string; sets: LoggedSet[] }[];

@@ -1,11 +1,9 @@
-import Link from "next/link";
 import { requireUser } from "@/lib/auth";
-import { getCyclesForRange, getWorkoutsBetween, listUsers } from "@/lib/data";
+import { getCycleWeekStats, getCyclesForRange, getWorkoutsBetween, listUsers } from "@/lib/data";
 import { addDays, diffDays, formatDay, isISODate, mondayOf, today as getToday, weekDates } from "@/lib/dates";
-import { WeekBoard } from "@/components/week-board";
-import { SPORT_LABEL, SPORT_STYLE } from "@/lib/sport";
-import { formatDistance, formatDuration } from "@/lib/units";
-import type { Sport } from "@/db/schema";
+import { WeekView } from "@/components/week-view";
+import { CycleBanner, IconLink, Notice, SegmentedLinks } from "@/components/tandem/ui";
+import Link from "next/link";
 
 export default async function WeekPage({ searchParams }: PageProps<"/">) {
   const me = await requireUser();
@@ -16,95 +14,62 @@ export default async function WeekPage({ searchParams }: PageProps<"/">) {
   const people = await listUsers();
   const viewed = people.find((p) => p.id === sp.u) ?? people.find((p) => p.id === me.id)!;
   const editable = viewed.id === me.id;
+  const ownerQuery = editable ? "" : `&u=${viewed.id}`;
 
-  const [workouts, cycles] = await Promise.all([
-    getWorkoutsBetween(viewed.id, monday, sunday),
-    getCyclesForRange(viewed.id, monday, sunday),
-  ]);
-
-  const done = workouts.filter((w) => w.status === "done").length;
-  const bySport = new Map<Sport, { n: number; dist: number; time: number }>();
-  for (const w of workouts) {
-    if (w.status === "skipped") continue;
-    const s = bySport.get(w.sport) ?? { n: 0, dist: 0, time: 0 };
-    s.n++;
-    const src = w.status === "done" && w.log?.kind === "endurance" ? w.log : w.plan.kind === "endurance" ? w.plan : null;
-    s.dist += src?.distanceM ?? 0;
-    s.time += src?.durationS ?? 0;
-    bySport.set(w.sport, s);
-  }
-
-  const q = (w: string) => `/?w=${w}${editable ? "" : `&u=${viewed.id}`}`;
+  const [workouts, cycles] = await Promise.all([getWorkoutsBetween(viewed.id, monday, sunday), getCyclesForRange(viewed.id, monday, sunday)]);
+  const stats = await getCycleWeekStats(cycles.map((c) => c.id));
+  const isThisWeek = monday === mondayOf(today);
+  const q = (w: string) => `/?w=${w}${ownerQuery}`;
 
   return (
-    <div className="space-y-4">
+    <>
       {people.length > 1 && (
-        <div className="flex rounded-xl bg-surface-2 p-1 text-sm">
-          {people.map((p) => (
-            <Link
-              key={p.id}
-              href={`/?w=${monday}${p.id === me.id ? "" : `&u=${p.id}`}`}
-              className={`flex-1 rounded-lg py-1.5 text-center font-medium ${p.id === viewed.id ? "bg-surface shadow-sm" : "text-muted"}`}
-            >
-              {p.id === me.id ? "Me" : p.name}
-            </Link>
-          ))}
-        </div>
+        <SegmentedLinks
+          label="Whose plan"
+          block
+          value={viewed.id}
+          options={people.map((p) => ({ value: p.id, label: p.id === me.id ? "Me" : p.name, href: `/?w=${monday}${p.id === me.id ? "" : `&u=${p.id}`}` }))}
+        />
       )}
 
-      <div className="flex items-center justify-between">
-        <Link href={q(addDays(monday, -7))} className="btn-ghost px-3" aria-label="Previous week">‹</Link>
+      {!editable && (
+        <Notice tone="partner" title={`${viewed.name}'s week`} action={<Link href={`/?w=${monday}`} className="td-btn td-btn-secondary td-btn-sm">Back to me</Link>}>
+          Read only. You can look, not change.
+        </Notice>
+      )}
+
+      <div className="flex items-center justify-between gap-2">
+        <IconLink href={q(addDays(monday, -7))} icon="left" label="Previous week" />
         <div className="text-center">
-          <h1 className="text-lg font-semibold">
-            {formatDay(monday, { day: "numeric", month: "short" })} – {formatDay(sunday, { day: "numeric", month: "short" })}
-          </h1>
-          {monday !== mondayOf(today) && (
-            <Link href={q(today)} className="text-xs text-accent">Back to this week</Link>
+          <h1 className="t-display-m m-0">{isThisWeek ? "This week" : `Week of ${formatDay(monday, { day: "numeric", month: "short" })}`}</h1>
+          {isThisWeek ? (
+            <p className="td-metric-s td-muted m-0">{formatDay(monday, { day: "numeric", month: "short" })} – {formatDay(sunday, { day: "numeric", month: "short" })}</p>
+          ) : (
+            <Link href={q(today)} className="td-metric-s" style={{ color: "var(--ink)" }}>Back to this week</Link>
           )}
         </div>
-        <Link href={q(addDays(monday, 7))} className="btn-ghost px-3" aria-label="Next week">›</Link>
+        <IconLink href={q(addDays(monday, 7))} icon="right" label="Next week" />
       </div>
 
+      <WeekView key={`${viewed.id}-${monday}`} days={weekDates(monday)} today={today} workouts={workouts} editable={editable} ownerQuery={ownerQuery} />
+
       {cycles.map((c) => {
-        const week = Math.floor(diffDays(monday, c.startDate) / 7) + 1;
-        const focus = c.weekFocus?.[week];
+        const current = Math.min(c.weeks, Math.max(1, Math.floor(diffDays(monday, c.startDate) / 7) + 1));
+        const s = stats[c.id] ?? {};
         return (
-          <div key={c.id} className="card px-4 py-3">
-            <div className="flex items-baseline justify-between gap-2">
-              <p className="font-medium">{c.name}</p>
-              <p className="shrink-0 text-sm text-muted">Week {Math.max(1, Math.min(week, c.weeks))} of {c.weeks}</p>
-            </div>
-            {(focus || c.goal) && <p className="text-sm text-muted">{focus ? `Focus: ${focus}` : c.goal}</p>}
-            <div className="mt-2 flex gap-1">
-              {Array.from({ length: c.weeks }, (_, i) => (
-                <span key={i} className={`h-1.5 flex-1 rounded-full ${i + 1 < week ? "bg-accent/50" : i + 1 === week ? "bg-accent" : "bg-surface-2"}`} />
-              ))}
-            </div>
-          </div>
+          <CycleBanner
+            key={c.id}
+            href="/cycles"
+            goal={c.goal}
+            name={c.name}
+            current={current}
+            weeks={Array.from({ length: c.weeks }, (_, i) => ({
+              focus: c.weekFocus?.[i + 1] ?? `Week ${i + 1}`,
+              done: s[i + 1]?.total ? s[i + 1].done / s[i + 1].total : 0,
+            }))}
+          />
         );
       })}
-
-      {workouts.length > 0 && (
-        <div className="card flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 text-sm">
-          <span className="font-medium">{done}/{workouts.length} done</span>
-          {[...bySport.entries()].map(([sport, s]) => (
-            <span key={sport} className="flex items-center gap-1.5 text-muted">
-              <span className={`size-2 rounded-full ${SPORT_STYLE[sport].dot}`} />
-              {SPORT_LABEL[sport]} {s.dist ? formatDistance(s.dist) : s.time ? formatDuration(s.time) : `×${s.n}`}
-            </span>
-          ))}
-        </div>
-      )}
-
-      <WeekBoard days={weekDates(monday)} today={today} workouts={workouts} editable={editable} />
-
-      {workouts.length === 0 && cycles.length === 0 && editable && (
-        <div className="card p-5 text-center">
-          <p className="font-medium">Nothing planned this week</p>
-          <p className="mb-3 text-sm text-muted">Import a 3-week cycle to fill your calendar.</p>
-          <Link href="/cycles/new" className="btn-primary">Import a cycle</Link>
-        </div>
-      )}
-    </div>
+    </>
   );
 }

@@ -3,48 +3,33 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import type { FormState } from "@/app/actions/auth";
+import { TextField } from "@/components/tandem/interactive";
+import { Notice } from "@/components/tandem/ui";
 
-export function AuthForm({
-  mode,
-  action,
-}: {
-  mode: "login" | "register";
-  action: (s: FormState, f: FormData) => Promise<FormState>;
-}) {
+export function AuthForm({ mode, action }: { mode: "login" | "register"; action: (s: FormState, f: FormData) => Promise<FormState> }) {
   const [state, formAction, pending] = useActionState(action, undefined);
   return (
-    <form action={formAction} className="card space-y-4 p-5">
-      {mode === "register" && (
-        <div>
-          <label className="label" htmlFor="name">Name</label>
-          <input id="name" name="name" className="input" autoComplete="given-name" required />
-        </div>
-      )}
-      <div>
-        <label className="label" htmlFor="email">Email</label>
-        <input id="email" name="email" type="email" className="input" autoComplete="email" required />
-      </div>
-      <div>
-        <label className="label" htmlFor="password">Password</label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          className="input"
-          autoComplete={mode === "login" ? "current-password" : "new-password"}
-          minLength={mode === "register" ? 8 : undefined}
-          required
-        />
-      </div>
-      {state?.error && <p className="text-sm text-bad">{state.error}</p>}
-      <button className="btn-primary w-full" disabled={pending}>
+    <form action={formAction} className="flex flex-col gap-4">
+      {mode === "register" && <TextField label="Name" name="name" autoComplete="given-name" required />}
+      <TextField label="Email" name="email" type="email" autoComplete="email" required />
+      <TextField
+        label="Password"
+        name="password"
+        type="password"
+        autoComplete={mode === "login" ? "current-password" : "new-password"}
+        minLength={mode === "register" ? 8 : undefined}
+        hint={mode === "register" ? "At least 8 characters." : undefined}
+        required
+      />
+      {state?.error && <Notice tone="error" title={state.error} />}
+      <button className="td-btn td-btn-primary td-btn-block" disabled={pending}>
         {pending ? "…" : mode === "login" ? "Log in" : "Create account"}
       </button>
-      <p className="text-center text-sm text-muted">
+      <p className="t-small m-0 text-center text-ink-muted">
         {mode === "login" ? (
-          <>First time? <Link className="text-accent" href="/register">Create an account</Link></>
+          <>First time? <Link href="/register" style={{ color: "var(--ink)", fontWeight: 600 }}>Create an account</Link></>
         ) : (
-          <>Already have one? <Link className="text-accent" href="/login">Log in</Link></>
+          <>Already have one? <Link href="/login" style={{ color: "var(--ink)", fontWeight: 600 }}>Log in</Link></>
         )}
       </p>
     </form>

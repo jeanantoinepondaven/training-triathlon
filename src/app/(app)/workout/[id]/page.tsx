@@ -1,13 +1,15 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { getLastPerformance, getWorkout, listUsers } from "@/lib/data";
-import { formatDay, mondayOf, weekDates } from "@/lib/dates";
-import { SPORT_LABEL, SPORT_STYLE } from "@/lib/sport";
+import { formatDay, mondayOf, today as getToday, weekDates } from "@/lib/dates";
+import { heroStat, loggedLine, stepsFor } from "@/lib/sport";
 import { formatDistance, formatDuration, formatPace } from "@/lib/units";
 import { logWorkout } from "@/app/actions/workouts";
-import { DeleteButton, MoveControl, StatusControls } from "@/components/workout-controls";
+import { SportTag } from "@/components/tandem/icon";
+import { IconLink, Notice, SectionLabel, StatusTag } from "@/components/tandem/ui";
+import { DeleteButton, MoveControl, StatusControl } from "@/components/workout-controls";
 import { EnduranceLogForm, GymLogForm } from "@/components/log-forms";
+import Link from "next/link";
 
 export default async function WorkoutPage({ params, searchParams }: PageProps<"/workout/[id]">) {
   const me = await requireUser();
@@ -17,96 +19,97 @@ export default async function WorkoutPage({ params, searchParams }: PageProps<"/
   if (!w) notFound();
   const mine = w.userId === me.id;
   const owner = mine ? null : (await listUsers()).find((u) => u.id === w.userId);
-  const st = SPORT_STYLE[w.sport];
   const plan = w.plan;
   const log = w.log;
+  const today = getToday();
   const action = logWorkout.bind(null, w.id);
   const back = `/?w=${w.date}${mine ? "" : `&u=${w.userId}`}`;
+  const stat = heroStat(w);
+  const steps = stepsFor(w);
 
-  const prev = plan.kind === "gym" && mine
-    ? await getLastPerformance(me.id, [...plan.exercises.map((e) => e.name), ...(log?.kind === "gym" ? log.exercises.map((e) => e.name) : [])], w.id)
-    : {};
+  const prev =
+    plan.kind === "gym" && mine
+      ? await getLastPerformance(me.id, [...plan.exercises.map((e) => e.name), ...(log?.kind === "gym" ? log.exercises.map((e) => e.name) : [])], w.id)
+      : {};
 
   return (
-    <div className="space-y-5">
-      <Link href={back} className="text-sm text-accent">‹ Week</Link>
-
-      <div>
-        <div className="flex items-center gap-2">
-          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold uppercase tracking-wide ${st.bg} ${st.text}`}>{SPORT_LABEL[w.sport]}</span>
-          {w.week && <span className="text-xs text-muted">Week {w.week}</span>}
-          {owner && <span className="text-xs text-muted">· {owner.name}&apos;s session</span>}
-        </div>
-        <h1 className="mt-1 text-2xl font-semibold">{w.title}</h1>
-        <p className="text-sm text-muted">
-          {formatDay(w.date, { weekday: "long", day: "numeric", month: "long" })}
-          {w.date !== w.plannedDate && <> · planned for {formatDay(w.plannedDate)}</>}
-        </p>
-        {w.description && <p className="mt-2 whitespace-pre-line text-sm">{w.description}</p>}
+    <>
+      <div className="-ml-3 flex items-center gap-1">
+        <IconLink href={back} icon="left" label="Back to the week" />
+        <span className="td-label td-muted">Week</span>
       </div>
 
-      {saved && <p className="rounded-xl bg-good/10 px-3 py-2 text-sm text-good">Saved. Nice work! 💪</p>}
+      {!mine && owner && (
+        <Notice tone="partner" title={`${owner.name}'s session`} action={<Link href="/" className="td-btn td-btn-secondary td-btn-sm">Back to me</Link>}>
+          Read only.
+        </Notice>
+      )}
 
-      {/* The plan */}
-      <section className="card p-4">
-        <h2 className="mb-2 text-sm font-semibold text-muted">Plan</h2>
-        {plan.kind === "gym" && plan.exercises.length > 0 && (
-          <table className="w-full text-sm">
-            <tbody>
-              {plan.exercises.map((e, i) => (
-                <tr key={i} className="border-t border-border first:border-0">
-                  <td className="py-2 pr-2 font-medium">
-                    {e.name}
-                    {(e.rest || e.notes) && <div className="text-xs font-normal text-muted">{[e.rest && `rest ${e.rest}`, e.notes].filter(Boolean).join(" · ")}</div>}
-                  </td>
-                  <td className="py-2 pr-2 text-right whitespace-nowrap">{e.sets} × {e.reps}</td>
-                  <td className="py-2 text-right whitespace-nowrap text-muted">{e.load}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-        {plan.kind === "endurance" && (
-          <div className="space-y-2 text-sm">
-            <div className="flex flex-wrap gap-x-4 gap-y-1">
-              {plan.distanceM && <span><b>{formatDistance(plan.distanceM)}</b></span>}
-              {plan.durationS && <span><b>{formatDuration(plan.durationS)}</b></span>}
-              {plan.target && <span className="text-muted">{plan.target}</span>}
-            </div>
-            {plan.steps && (
-              <ol className="space-y-1">
-                {plan.steps.map((s, i) => (
-                  <li key={i} className="flex gap-2 rounded-lg bg-surface-2 px-3 py-1.5">
-                    <span className="font-medium">{s.repeat ? `${s.repeat} × ` : ""}{[formatDistance(s.distanceM), formatDuration(s.durationS)].filter(Boolean).join(" / ")}</span>
-                    <span className="text-muted">{[s.label, s.target].filter(Boolean).join(" · ")}</span>
-                  </li>
-                ))}
-              </ol>
+      <header className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <SportTag sport={w.sport} />
+          {w.week && <span className="td-label td-muted">Week {w.week}</span>}
+          {w.date === today && <StatusTag kind="today">Today</StatusTag>}
+          {w.date !== w.plannedDate && <StatusTag kind="moved">Moved from {formatDay(w.plannedDate, { weekday: "short" })}</StatusTag>}
+          {w.status === "planned" && w.date < today && <StatusTag kind="missed">Missed</StatusTag>}
+        </div>
+        <h1 className="t-display-l m-0">{w.title}</h1>
+        <p className="td-metric-s td-muted m-0">{formatDay(w.date, { weekday: "long", day: "numeric", month: "long" })}</p>
+        {w.description && <p className="m-0 whitespace-pre-line">{w.description}</p>}
+      </header>
+
+      {saved && <Notice tone="done" title="Saved.">{loggedLine(w) || "Logged and marked done."}</Notice>}
+
+      <section className={`td-tile td-s-${w.sport}`} style={{ padding: 20, gap: 12 }} aria-label="Plan">
+        <span className="td-label td-muted">Plan</span>
+        {plan.kind === "endurance" && (stat || plan.target) && (
+          <div>
+            {stat && (
+              <div className="td-hero-stat" style={{ marginTop: 0 }}>
+                <b>{stat.value}</b>
+                <span className="td-metric td-muted">{stat.unit}</span>
+              </div>
             )}
+            {plan.target && <div className="td-metric td-muted">{plan.target}</div>}
           </div>
         )}
-        {(plan.kind === "free" || (plan.kind === "gym" && !plan.exercises.length) || (plan.kind === "endurance" && !plan.distanceM && !plan.durationS && !plan.steps)) && (
-          <p className="text-sm text-muted">No detailed plan. Just log what you did.</p>
+        {steps.length > 0 && (
+          <ol className="td-steps td-metric" style={{ marginTop: 0 }}>
+            {steps.map((s, i) => (
+              <li key={i} className={s.easy ? "td-easy" : undefined}>
+                <span>{plan.kind === "gym" ? s.note : s.text}</span>
+                <span className="td-muted">{plan.kind === "gym" ? s.text : s.note}</span>
+              </li>
+            ))}
+          </ol>
         )}
+        {plan.kind === "gym" && plan.exercises.some((e) => e.rest || e.notes) && (
+          <p className="td-metric-s td-muted m-0">
+            {plan.exercises.filter((e) => e.rest || e.notes).map((e) => `${e.name}: ${[e.rest && `rest ${e.rest}`, e.notes].filter(Boolean).join(", ")}`).join(" · ")}
+          </p>
+        )}
+        {!stat && !steps.length && !(plan.kind === "endurance" && plan.target) && <p className="m-0 td-muted">No detailed plan. Log what you did.</p>}
       </section>
 
       {mine ? (
         <>
-          <section className="space-y-2">
-            <h2 className="text-sm font-semibold text-muted">Status</h2>
-            <StatusControls id={w.id} status={w.status} />
+          <section className="flex flex-col gap-2">
+            <SectionLabel>Status</SectionLabel>
+            <StatusControl id={w.id} status={w.status} />
           </section>
-          <section className="space-y-2">
-            <h2 className="text-sm font-semibold text-muted">Move to another day</h2>
-            <MoveControl
-              id={w.id}
-              date={w.date}
-              plannedDate={w.plannedDate}
-              weekDays={weekDates(mondayOf(w.date)).map((d) => ({ date: d, label: formatDay(d, { weekday: "narrow" }) + formatDay(d, { day: "numeric" }) }))}
-            />
-          </section>
-          <section className="space-y-2">
-            <h2 className="text-sm font-semibold text-muted">{log ? "Your log" : "Log this session"}</h2>
+          {w.status !== "done" && (
+            <section className="flex flex-col gap-2">
+              <SectionLabel>Move to</SectionLabel>
+              <MoveControl
+                id={w.id}
+                date={w.date}
+                plannedDate={w.plannedDate}
+                weekDays={weekDates(mondayOf(w.date)).map((d) => ({ date: d, label: formatDay(d, { weekday: "short" }) }))}
+              />
+            </section>
+          )}
+          <section className="flex flex-col gap-3">
+            <SectionLabel>{log ? "Your log" : "Log it"}</SectionLabel>
             {plan.kind === "gym" ? (
               <GymLogForm action={action} plan={plan} log={log?.kind === "gym" ? log : null} prev={prev} rpe={w.rpe} feeling={w.feeling} notes={w.notes} />
             ) : (
@@ -134,18 +137,22 @@ export default async function WorkoutPage({ params, searchParams }: PageProps<"/
           {!w.cycleId && <DeleteButton id={w.id} />}
         </>
       ) : (
-        <section className="card space-y-1 p-4 text-sm">
-          <h2 className="mb-1 font-semibold text-muted">Status: {w.status}</h2>
+        <section className="td-tile" style={{ padding: 16 }}>
+          <span className="td-label td-muted">Status</span>
+          <span className="t-title">{w.status === "done" ? "Done" : w.status === "skipped" ? "Skipped" : w.date < today ? "Missed" : "Planned"}</span>
           {log?.kind === "endurance" && (
-            <p>{[formatDistance(log.distanceM), formatDuration(log.durationS), formatPace(w.sport, log.distanceM, log.durationS), log.avgHr && `${log.avgHr} bpm`].filter(Boolean).join(" · ")}</p>
+            <span className="td-metric">{[formatDistance(log.distanceM), formatDuration(log.durationS), formatPace(w.sport, log.distanceM, log.durationS), log.avgHr && `${log.avgHr} bpm`].filter(Boolean).join(" · ")}</span>
           )}
-          {log?.kind === "gym" && log.exercises.map((e) => (
-            <p key={e.name}><b>{e.name}</b>: {e.sets.map((s) => `${s.reps ?? "?"}×${s.weightKg ?? "–"}`).join(", ")}</p>
-          ))}
-          {w.rpe && <p>RPE {w.rpe}</p>}
-          {w.notes && <p className="text-muted">“{w.notes}”</p>}
+          {log?.kind === "gym" &&
+            log.exercises.map((e) => (
+              <span key={e.name} className="td-metric">
+                {e.name}: {e.sets.map((s) => `${s.reps ?? "?"} × ${s.weightKg ?? "–"}`).join(", ")}
+              </span>
+            ))}
+          {w.rpe && <span className="td-metric-s td-muted">RPE {w.rpe}/10</span>}
+          {w.notes && <span className="td-muted">“{w.notes}”</span>}
         </section>
       )}
-    </div>
+    </>
   );
 }

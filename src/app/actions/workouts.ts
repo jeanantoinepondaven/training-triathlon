@@ -68,6 +68,7 @@ export async function logWorkout(id: string, form: FormData) {
             .map((s) => ({
               reps: s.reps === null || s.reps === undefined || isNaN(Number(s.reps)) ? null : Number(s.reps),
               weightKg: s.weightKg === null || s.weightKg === undefined || isNaN(Number(s.weightKg)) ? null : Number(s.weightKg),
+              ...(s.done ? { done: true } : {}),
             }))
             .filter((s) => s.reps !== null || s.weightKg !== null),
         })),

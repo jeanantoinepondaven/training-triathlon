@@ -3,47 +3,37 @@
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import type { GymLog, GymPlan, LoggedSet } from "@/lib/plan-types";
-import { estimate1RM } from "@/lib/units";
+import { estimate1RM, formatPace, parseDistance, parseDuration } from "@/lib/units";
+import { DoneTick, MoodPicker, RpeScale, Stepper, TextField } from "@/components/tandem/interactive";
+import { Button } from "@/components/tandem/ui";
 
-function SaveButton({ label }: { label: string }) {
+function SaveBar({ label }: { label: string }) {
   const { pending } = useFormStatus();
-  return <button className="btn-primary w-full" disabled={pending}>{pending ? "Saving…" : label}</button>;
+  return (
+    <div className="td-savebar">
+      <button className="td-btn td-btn-primary td-btn-block" disabled={pending}>
+        {pending ? "Saving…" : label}
+      </button>
+    </div>
+  );
 }
 
 function Wellbeing({ rpe, feeling, notes }: { rpe?: number | null; feeling?: number | null; notes?: string | null }) {
   const [r, setR] = useState(rpe ?? 0);
   const [f, setF] = useState(feeling ?? 0);
   return (
-    <div className="space-y-3">
-      <div>
-        <span className="label">Effort (RPE)</span>
-        <input type="hidden" name="rpe" value={r || ""} />
-        <div className="grid grid-cols-10 gap-1">
-          {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-            <button type="button" key={n} onClick={() => setR(n === r ? 0 : n)}
-              className={`rounded-lg py-1.5 text-sm ${n === r ? "bg-accent text-white" : "bg-surface-2 text-muted"}`}>{n}</button>
-          ))}
-        </div>
-      </div>
-      <div>
-        <span className="label">How did you feel?</span>
-        <input type="hidden" name="feeling" value={f || ""} />
-        <div className="grid grid-cols-5 gap-1">
-          {["😫", "😕", "😐", "🙂", "🤩"].map((e, i) => (
-            <button type="button" key={i} onClick={() => setF(i + 1 === f ? 0 : i + 1)}
-              className={`rounded-lg py-1.5 text-xl ${i + 1 === f ? "bg-accent/20 ring-2 ring-accent" : "bg-surface-2"}`}>{e}</button>
-          ))}
-        </div>
-      </div>
-      <div>
-        <label className="label" htmlFor="notes">Notes</label>
-        <textarea id="notes" name="notes" rows={2} defaultValue={notes ?? ""} className="input" placeholder="Sleep, niggles, conditions…" />
-      </div>
+    <div className="flex flex-col gap-6">
+      <input type="hidden" name="rpe" value={r || ""} />
+      <input type="hidden" name="feeling" value={f || ""} />
+      <RpeScale value={r} onChange={setR} />
+      <MoodPicker value={f} onChange={setF} />
+      <TextField label="Notes" name="notes" multiline rows={2} defaultValue={notes ?? ""} placeholder="Sleep, niggles, conditions" />
     </div>
   );
 }
 
 type Prev = Record<string, { date: string; sets: LoggedSet[] }>;
+type Ex = GymLog["exercises"][number];
 
 export function GymLogForm({
   action,
@@ -62,66 +52,81 @@ export function GymLogForm({
   feeling?: number | null;
   notes?: string | null;
 }) {
-  const initial: GymLog["exercises"] =
+  const initial: Ex[] =
     log?.exercises ??
     plan.exercises.map((e) => ({
       name: e.name,
       sets: Array.from({ length: e.sets }, () => ({ reps: parseInt(e.reps) || null, weightKg: e.loadKg ?? null })),
     }));
   const [ex, setEx] = useState(initial);
-
-  const update = (i: number, j: number, k: keyof LoggedSet, v: string) =>
-    setEx((cur) => cur.map((e, a) => (a !== i ? e : { ...e, sets: e.sets.map((s, b) => (b !== j ? s : { ...s, [k]: v === "" ? null : Number(v) })) })));
+  const planFor = (name: string) => plan.exercises.find((p) => p.name.toLowerCase() === name.toLowerCase());
+  const patchSet = (i: number, j: number, patch: Partial<LoggedSet>) =>
+    setEx((cur) => cur.map((e, a) => (a !== i ? e : { ...e, sets: e.sets.map((s, b) => (b !== j ? s : { ...s, ...patch })) })));
   const addSet = (i: number) =>
-    setEx((cur) => cur.map((e, a) => (a !== i ? e : { ...e, sets: [...e.sets, { ...(e.sets.at(-1) ?? { reps: null, weightKg: null }) }] })));
+    setEx((cur) => cur.map((e, a) => (a !== i ? e : { ...e, sets: [...e.sets, { reps: e.sets.at(-1)?.reps ?? null, weightKg: e.sets.at(-1)?.weightKg ?? null }] })));
+  const sameAsLast = (i: number) =>
+    setEx((cur) =>
+      cur.map((e, a) => {
+        if (a !== i) return e;
+        const lastDone = [...e.sets].reverse().find((s) => s.done) ?? e.sets[0];
+        const next = e.sets.findIndex((s) => !s.done);
+        if (next < 0 || !lastDone) return { ...e, sets: [...e.sets, { reps: lastDone?.reps ?? null, weightKg: lastDone?.weightKg ?? null, done: true }] };
+        return { ...e, sets: e.sets.map((s, b) => (b === next ? { reps: lastDone.reps, weightKg: lastDone.weightKg, done: true } : s)) };
+      }),
+    );
   const removeSet = (i: number) => setEx((cur) => cur.map((e, a) => (a !== i ? e : { ...e, sets: e.sets.slice(0, -1) })));
 
   return (
-    <form action={action} className="space-y-4">
+    <form action={action} className="flex flex-col gap-6">
       <input type="hidden" name="gym" value={JSON.stringify(ex)} />
       {ex.map((e, i) => {
-        const p = prev[e.name.toLowerCase()];
+        const p = planFor(e.name);
+        const last = prev[e.name.toLowerCase()];
         const best = Math.max(0, ...e.sets.map((s) => estimate1RM(s.weightKg ?? 0, s.reps ?? 0)));
+        const lastTop = last ? Math.max(...last.sets.map((s) => s.weightKg ?? 0)) : 0;
         return (
-          <div key={i} className="card p-3">
-            <div className="mb-2 flex items-baseline justify-between gap-2">
-              <input
-                value={e.name}
-                onChange={(v) => setEx((cur) => cur.map((x, a) => (a === i ? { ...x, name: v.target.value } : x)))}
-                className="min-w-0 flex-1 bg-transparent font-medium outline-none"
-                aria-label="Exercise name"
-              />
-              {best > 0 && <span className="shrink-0 text-xs text-muted">e1RM {best} kg</span>}
+          <section key={i} className="td-tile" style={{ gap: 12, padding: 16 }} aria-label={e.name}>
+            <input
+              value={e.name}
+              onChange={(v) => setEx((cur) => cur.map((x, a) => (a === i ? { ...x, name: v.target.value } : x)))}
+              className="t-title"
+              style={{ border: 0, background: "transparent", color: "var(--ink)", outline: "none", padding: 0, fontFamily: "var(--font-text)" }}
+              aria-label="Exercise name"
+            />
+            <div className="td-set-head">
+              <span className="td-metric-s td-muted">
+                {p ? `Plan ${p.sets} × ${p.reps}${p.load ? ` @ ${p.load}` : ""}` : "Extra exercise"}
+                {best ? ` · est. 1RM ${best} kg` : ""}
+              </span>
+              {lastTop > 0 && <span className="td-metric-s td-muted">last {lastTop}</span>}
             </div>
-            {p && (
-              <p className="mb-2 text-xs text-muted">
-                Last time: {p.sets.map((s) => `${s.reps ?? "?"}×${s.weightKg ?? "–"}`).join(", ")}
-              </p>
-            )}
-            <div className="grid grid-cols-[2rem_1fr_1fr] items-center gap-2 text-sm">
-              <span className="text-xs text-muted">Set</span>
-              <span className="text-xs text-muted">Reps</span>
-              <span className="text-xs text-muted">kg</span>
+            <div className="flex flex-col gap-2">
               {e.sets.map((s, j) => (
-                <div key={j} className="contents">
-                  <span className="text-muted">{j + 1}</span>
-                  <input inputMode="numeric" className="input py-1.5" value={s.reps ?? ""} onChange={(v) => update(i, j, "reps", v.target.value)} aria-label={`Set ${j + 1} reps`} />
-                  <input inputMode="decimal" className="input py-1.5" value={s.weightKg ?? ""} onChange={(v) => update(i, j, "weightKg", v.target.value.replace(",", "."))} aria-label={`Set ${j + 1} weight`} />
+                <div key={j} className="td-set">
+                  <span className="td-set-n" aria-label={`Set ${j + 1}`}>{j + 1}</span>
+                  <div className="td-set-reps">
+                    <Stepper value={s.reps} step={1} unit="reps" onChange={(n) => patchSet(i, j, { reps: n })} />
+                  </div>
+                  <div className="td-set-kg">
+                    <Stepper value={s.weightKg} step={2.5} unit="kg" onChange={(n) => patchSet(i, j, { weightKg: n })} />
+                  </div>
+                  <DoneTick checked={!!s.done} label={`set ${j + 1}`} onChange={(d) => patchSet(i, j, { done: d })} />
                 </div>
               ))}
             </div>
-            <div className="mt-2 flex gap-2">
-              <button type="button" className="btn-ghost flex-1 py-1.5" onClick={() => addSet(i)}>+ Set</button>
-              {e.sets.length > 0 && <button type="button" className="btn-ghost py-1.5" onClick={() => removeSet(i)}>− Set</button>}
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" size="sm" icon="repeat" onClick={() => sameAsLast(i)}>Same as last set</Button>
+              <Button variant="ghost" size="sm" icon="plus" onClick={() => addSet(i)}>Add set</Button>
+              {e.sets.length > 0 && <Button variant="ghost" size="sm" icon="minus" onClick={() => removeSet(i)}>Remove</Button>}
             </div>
-          </div>
+          </section>
         );
       })}
-      <button type="button" className="btn-ghost w-full" onClick={() => setEx((c) => [...c, { name: "New exercise", sets: [{ reps: null, weightKg: null }] }])}>
-        + Add exercise
-      </button>
+      <Button variant="secondary" icon="plus" block onClick={() => setEx((c) => [...c, { name: "New exercise", sets: [{ reps: null, weightKg: null }] }])}>
+        Add exercise
+      </Button>
       <Wellbeing rpe={rpe} feeling={feeling} notes={notes} />
-      <SaveButton label={log ? "Update log" : "Save & mark done"} />
+      <SaveBar label={log ? "Update log" : "Save log"} />
     </form>
   );
 }
@@ -143,35 +148,29 @@ export function EnduranceLogForm({
   notes?: string | null;
   hasLog: boolean;
 }) {
+  const [dist, setDist] = useState(initial.distance ?? "");
+  const [dur, setDur] = useState(initial.duration ?? "");
+  const unit = sport === "swim" ? "m" : "km";
+  let pace = "";
+  try {
+    const m = dist ? parseDistance(/[a-z]/i.test(dist) ? dist : `${dist}${unit}`) : undefined;
+    const s = dur ? parseDuration(dur) : undefined;
+    pace = formatPace(sport, m, s);
+  } catch {}
   return (
-    <form action={action} className="space-y-4">
+    <form action={action} className="flex flex-col gap-6">
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="label" htmlFor="distance">Distance ({sport === "swim" ? "m" : "km"})</label>
-          <input id="distance" name="distance" inputMode="decimal" defaultValue={initial.distance} className="input" placeholder={sport === "swim" ? "2000" : "8.2"} />
-        </div>
-        <div>
-          <label className="label" htmlFor="duration">Time</label>
-          <input id="duration" name="duration" defaultValue={initial.duration} className="input" placeholder="45:30 or 1h05" />
-        </div>
-        <div>
-          <label className="label" htmlFor="avgHr">Avg HR</label>
-          <input id="avgHr" name="avgHr" inputMode="numeric" defaultValue={initial.avgHr} className="input" placeholder="bpm" />
-        </div>
+        <TextField label="Distance" name="distance" numeric unit={unit} value={dist} onChange={setDist} placeholder={sport === "swim" ? "2000" : "8.2"} />
+        <TextField label="Time" name="duration" value={dur} onChange={setDur} placeholder="45:30" hint={pace ? `Pace ${pace}` : "45:30 or 1h05"} mono />
+        <TextField label="Avg HR" name="avgHr" numeric unit="bpm" defaultValue={initial.avgHr?.toString()} />
         {sport === "bike" ? (
-          <div>
-            <label className="label" htmlFor="avgPower">Avg power</label>
-            <input id="avgPower" name="avgPower" inputMode="numeric" defaultValue={initial.avgPower} className="input" placeholder="W" />
-          </div>
+          <TextField label="Avg power" name="avgPower" numeric unit="W" defaultValue={initial.avgPower?.toString()} />
         ) : sport !== "swim" ? (
-          <div>
-            <label className="label" htmlFor="elevation">Elevation</label>
-            <input id="elevation" name="elevation" inputMode="numeric" defaultValue={initial.elevation} className="input" placeholder="m" />
-          </div>
+          <TextField label="Elevation" name="elevation" numeric unit="m" defaultValue={initial.elevation?.toString()} />
         ) : null}
       </div>
       <Wellbeing rpe={rpe} feeling={feeling} notes={notes} />
-      <SaveButton label={hasLog ? "Update log" : "Save & mark done"} />
+      <SaveBar label={hasLog ? "Update log" : "Save log"} />
     </form>
   );
 }
