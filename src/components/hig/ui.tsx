@@ -587,7 +587,8 @@ export function MenuLayer({ items, y, label, onClose }: { items: MenuItem[]; y: 
 }
 
 const TABS = [
-  { href: "/", icon: "calendar", label: "Week" },
+  { href: "/", icon: "house", label: "Home" },
+  { href: "/week", icon: "calendar", label: "Week" },
   { href: "/progress", icon: "chart.line.uptrend.xyaxis", label: "Progress" },
   { href: "/cycles", icon: "square.stack", label: "Cycles" },
 ];
@@ -596,7 +597,7 @@ export function TabBar() {
   return (
     <nav className="hig-tabbar hig-glass" aria-label="Main">
       {TABS.map((t) => {
-        const on = t.href === "/" ? path === "/" : path.startsWith(t.href);
+        const on = t.href === "/" ? path === "/" || path.startsWith("/races") : path.startsWith(t.href) || (t.href === "/week" && path.startsWith("/workout"));
         return (
           <Link key={t.href} href={t.href} className={cx(on && "is-on")} aria-current={on ? "page" : undefined} style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 1, borderRadius: "var(--radius-capsule)", color: on ? "var(--tint-ink)" : "var(--label)", background: on ? "var(--fill-secondary)" : "transparent", padding: "0 10px" }}>
             <Symbol name={t.icon} size={22} weight={on ? "semibold" : undefined} />

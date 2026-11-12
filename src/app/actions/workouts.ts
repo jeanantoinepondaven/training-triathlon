@@ -144,7 +144,7 @@ export async function deleteWorkout(id: string) {
   const db = await getDb();
   await db.delete(schema.workouts).where(eq(schema.workouts.id, id));
   refresh();
-  redirect(`/?w=${w.date}`);
+  redirect(`/week?w=${w.date}`);
 }
 
 /** Add a one-off session from the Add sheet (no redirect; returns the new id). */

@@ -37,7 +37,7 @@ export function CyclesScreen({ current, currentWeek, currentProgress, upcoming, 
       y,
       label: c.name,
       items: [
-        { label: "Open week 1", icon: "calendar", onClick: () => router.push(`/?w=${c.start}`) },
+        { label: "Open week 1", icon: "calendar", onClick: () => router.push(`/week?w=${c.start}`) },
         { divider: true },
         {
           label: "Delete cycle and its sessions",
@@ -73,7 +73,7 @@ export function CyclesScreen({ current, currentWeek, currentProgress, upcoming, 
       >
         {current && (
           <ListSection header="Current" headerTrailing={current.dates}>
-            <div className="cyc-card" role="button" tabIndex={0} onClick={() => router.push("/")}>
+            <div className="cyc-card" role="button" tabIndex={0} onClick={() => router.push("/week")}>
               <CycleHeader name={current.name} week={currentWeek} progress={currentProgress} focus={current.focus} />
               <div className="cyc-foot">
                 <span>{current.goal}</span>

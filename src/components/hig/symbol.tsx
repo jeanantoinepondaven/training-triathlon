@@ -3,6 +3,12 @@
 import type { Sport } from "@/db/schema";
 
 const P: Record<string, string> = {
+  "pencil": "<path d=\"M4.5 19.5l1-4.6L15.6 4.8a2 2 0 0 1 2.8 0l.8.8a2 2 0 0 1 0 2.8L9.1 18.5z\"/><path d=\"M13.6 6.8l3.6 3.6\"/>",
+  "house": "<path d=\"M4 10.5 12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H5.5A1.5 1.5 0 0 1 4 19z\"/>",
+  "flag": "<path d=\"M5.5 21V4M5.5 4.5h12l-3 4 3 4h-12\"/>",
+  "target": "<circle cx=\"12\" cy=\"12\" r=\"8.5\"/><circle cx=\"12\" cy=\"12\" r=\"4.5\"/><circle cx=\"12\" cy=\"12\" r=\"1.2\" class=\"f\"/>",
+  "mappin": "<path d=\"M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11Z\"/><circle cx=\"12\" cy=\"10\" r=\"2.3\"/>",
+  "slider.horizontal.3": "<path d=\"M4 6.5h9M17 6.5h3M4 12h3M11 12h9M4 17.5h11M19 17.5h1\"/><circle cx=\"15\" cy=\"6.5\" r=\"2\"/><circle cx=\"9\" cy=\"12\" r=\"2\"/><circle cx=\"17\" cy=\"17.5\" r=\"2\"/>",
   "applewatch": "<rect x=\"6.5\" y=\"6\" width=\"11\" height=\"12\" rx=\"3.2\"/><path d=\"M8.8 6l.6-2.5h5.2l.6 2.5M8.8 18l.6 2.5h5.2l.6-2.5\"/><path d=\"M12 9.5V12l1.6 1.2\"/>",
   "arrow.triangle.2.circlepath": "<path d=\"M4.5 11a7.5 7.5 0 0 1 13-4.6L19.5 8.5M19.5 4.5v4h-4M19.5 13a7.5 7.5 0 0 1-13 4.6L4.5 15.5M4.5 19.5v-4h4\"/>",
   "chevron.left": "<path d=\"M14.5 5.5 8 12l6.5 6.5\"/>",

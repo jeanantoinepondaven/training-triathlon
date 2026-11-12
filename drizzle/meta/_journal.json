@@ -15,6 +15,13 @@
       "when": 1794492229296,
       "tag": "0001_intervals",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794499158481,
+      "tag": "0002_races_targets",
+      "breakpoints": true
     }
   ]
 }

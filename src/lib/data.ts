@@ -97,3 +97,24 @@ export async function getCycleWeekStats(cycleIds: string[]) {
   }
   return out;
 }
+
+export async function listRaces() {
+  const db = await getDb();
+  return db.select().from(schema.races).orderBy(asc(schema.races.date));
+}
+
+export async function getRace(id: string) {
+  const db = await getDb();
+  const [r] = await db.select().from(schema.races).where(eq(schema.races.id, id));
+  return r ?? null;
+}
+
+export async function listTargets(userId: string) {
+  const db = await getDb();
+  return db.select().from(schema.targets).where(eq(schema.targets.userId, userId)).orderBy(asc(schema.targets.createdAt));
+}
+
+export async function listAllCycles(userId: string) {
+  const db = await getDb();
+  return db.select().from(cycles).where(eq(cycles.userId, userId)).orderBy(asc(cycles.startDate));
+}

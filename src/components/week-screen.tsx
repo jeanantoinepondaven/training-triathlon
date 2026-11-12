@@ -29,6 +29,7 @@ import {
   cx,
 } from "@/components/hig/ui";
 import { ToastSlot, useToast } from "@/components/hig/toast";
+import { RaceRow, type RaceLite } from "@/components/races-ui";
 import { estimateMinutes, hm, loggedTag, targetLine } from "@/lib/sport";
 import { addDays, formatDay, mondayOf } from "@/lib/dates";
 
@@ -51,7 +52,9 @@ export function WeekScreen({
   cycle,
   monday,
   garmin,
+  races = [],
 }: {
+  races?: RaceLite[];
   garmin: boolean;
   title: string;
   subtitle: string;
@@ -121,7 +124,7 @@ export function WeekScreen({
         },
       ],
     });
-  const q = (w: string) => `/?w=${w}${editable ? "" : `&u=${viewedId}`}`;
+  const q = (w: string) => `/week?w=${w}${editable ? "" : `&u=${viewedId}`}`;
 
   const statusOf = (s: WW) => (s.status === "planned" && s.date < today ? "missed" : s.status);
   const mins = (s: WW) => estimateMinutes(s);
@@ -201,7 +204,8 @@ export function WeekScreen({
     ));
 
   const heroList = on(focus);
-  const empty = items.length === 0 && !cycle;
+  const raceOn = (d: string) => races.filter((r) => r.date === d).map((r) => <RaceRow key={r.id} r={r} today={today} />);
+  const empty = items.length === 0 && !cycle && !races.length;
   const owner = people.find((p) => p.id === viewedId);
 
   const body = empty ? (
@@ -242,9 +246,10 @@ export function WeekScreen({
           </span>
         </div>
         <ListSection>
+          {raceOn(focus)}
           {heroList.length ? (
             rows(heroList)
-          ) : (
+          ) : raceOn(focus).length ? null : (
             <div className="rest-cell">
               <span>Rest day</span>
               {!ro && (
@@ -260,6 +265,12 @@ export function WeekScreen({
         .filter((d) => d !== focus)
         .map((d) => {
           const l = on(d);
+          if (!l.length && raceOn(d).length)
+            return (
+              <ListSection key={d} header={`${d === today ? "Today · " : ""}${short(d)}`} headerTrailing="Race day">
+                {raceOn(d)}
+              </ListSection>
+            );
           if (!l.length)
             return (
               <div key={d} className="dayhead-rest">
@@ -271,6 +282,7 @@ export function WeekScreen({
           const brick = live.some((s) => s.sport === "bike") && live.some((s) => s.sport === "run");
           return (
             <ListSection key={d} header={`${d === today ? "Today · " : ""}${short(d)}`} headerTrailing={`${hm(live.reduce((x, s) => x + mins(s), 0))}${brick ? " · brick" : ""}`}>
+              {raceOn(d)}
               {rows(l)}
             </ListSection>
           );
@@ -317,7 +329,7 @@ export function WeekScreen({
               <SegmentedControl
                 label="Whose week"
                 value={viewedId}
-                options={people.map((p) => ({ value: p.id, label: p.id === meId ? "Me" : p.name, href: `/?w=${monday}${p.id === meId ? "" : `&u=${p.id}`}` }))}
+                options={people.map((p) => ({ value: p.id, label: p.id === meId ? "Me" : p.name, href: `/week?w=${monday}${p.id === meId ? "" : `&u=${p.id}`}` }))}
               />
             ) : (
               <span />
@@ -364,7 +376,7 @@ export function WeekScreen({
   );
 }
 
-function SessionRow({ s, status, readOnly, today, onOpen, onToggle }: { s: WW; status: string; readOnly: boolean; today: string; onOpen: () => void; onToggle: () => void }) {
+export function SessionRow({ s, status, readOnly, today, onOpen, onToggle }: { s: WW; status: string; readOnly: boolean; today: string; onOpen: () => void; onToggle: () => void }) {
   const logged = loggedTag(s);
   return (
     <div className={cx("hig-session", `is-${status}`, s.date === today && "is-today")} onClick={onOpen} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && onOpen()} aria-label={`${s.sport}, ${s.title}`}>
@@ -404,7 +416,7 @@ function SessionRow({ s, status, readOnly, today, onOpen, onToggle }: { s: WW; s
 }
 
 /** Swipe right = Done, swipe left = Move / Skip. Long-press or right-click opens the menu. */
-function SwipeRow({ enabled, done, skipped, onDone, onMove, onSkip, onLong, children }: { enabled: boolean; done: boolean; skipped: boolean; onDone: () => void; onMove: () => void; onSkip: () => void; onLong: (y: number) => void; children: React.ReactNode }) {
+export function SwipeRow({ enabled, done, skipped, onDone, onMove, onSkip, onLong, children }: { enabled: boolean; done: boolean; skipped: boolean; onDone: () => void; onMove: () => void; onSkip: () => void; onLong: (y: number) => void; children: React.ReactNode }) {
   const [dx, setDx] = useState(0);
   const [dragging, setDragging] = useState(false);
   const g = useRef<{ x: number; y: number; base: number; horiz: boolean | null; moved: boolean } | null>(null);

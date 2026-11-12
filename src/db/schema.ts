@@ -7,6 +7,7 @@ import {
   timestamp,
   jsonb,
   index,
+  real,
 } from "drizzle-orm/pg-core";
 import type { WorkoutLog, WorkoutPlan } from "@/lib/plan-types";
 
@@ -87,6 +88,65 @@ export const workouts = pgTable(
   ],
 );
 
+/** A race or event. `who` is "both" or a user id; `createdBy` owns edits. */
+export const races = pgTable(
+  "races",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    who: text("who").notNull().default("both"),
+    name: text("name").notNull(),
+    date: date("date").notNull(),
+    kind: text("kind", { enum: ["tri", "run", "bike", "swim"] }).notNull(),
+    dist: text("dist").notNull(),
+    priority: text("priority", { enum: ["A", "B", "C"] }).notNull().default("B"),
+    goalTime: text("goal_time"),
+    /** Per-leg goals, free text: { swim: "21:00", bike: "38–40 km/h", run: "35:00" } */
+    legGoals: jsonb("leg_goals").$type<Partial<Record<"swim" | "bike" | "run", string>>>().notNull().default({}),
+    place: text("place"),
+    note: text("note"),
+    result: text("result"),
+    resultPlace: text("result_place"),
+    onCal: integer("on_cal").notNull().default(1),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("races_date_idx").on(t.date)],
+);
+
+export const TARGET_KINDS = ["custom", "e1rm", "volume", "consistency", "best10k", "best5k"] as const;
+export type TargetKind = (typeof TARGET_KINDS)[number];
+
+/** A goal to work towards. Auto kinds compute "now" from the logged sessions; custom ones are updated by hand. */
+export const targets = pgTable(
+  "targets",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    kind: text("kind", { enum: TARGET_KINDS }).notNull().default("custom"),
+    sport: text("sport", { enum: SPORTS }).notNull().default("other"),
+    title: text("title").notNull(),
+    /** e1rm: exercise name · volume: sport ("all" for every sport) */
+    metricKey: text("metric_key"),
+    startValue: real("start_value").notNull(),
+    currentValue: real("current_value"),
+    goalValue: real("goal_value").notNull(),
+    unit: text("unit"),
+    /** Lower is better (times). Values are seconds then. */
+    lowerIsBetter: integer("lower_is_better").notNull().default(0),
+    raceId: uuid("race_id").references(() => races.id, { onDelete: "set null" }),
+    due: date("due"),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("targets_user_idx").on(t.userId)],
+);
+
+export type Race = typeof races.$inferSelect;
+export type Target = typeof targets.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type Cycle = typeof cycles.$inferSelect;
 export type Workout = typeof workouts.$inferSelect;

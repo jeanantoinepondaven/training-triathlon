@@ -31,7 +31,7 @@ export function ImportScreen({ people, meId }: { people: { id: string; name: str
       const r = await importCycle({ status: "idle" }, f);
       if (r.status === "imported") {
         toast({ message: `${r.name.replace(/^\d+\s*·\s*/, "")} imported · week 1`, icon: "checkmark", tone: "done" });
-        router.push(`/?w=${r.startDate}`);
+        router.push(`/week?w=${r.startDate}`);
       } else setRes(r);
     });
   };
