@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c2620"/>
+      <stop offset="0.55" stop-color="#0d120f"/>
+      <stop offset="1" stop-color="#060807"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.22" cy="0.08" r="0.75">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/>
+      <stop offset="0.6" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <rect width="1024" height="1024" fill="url(#glow)"/>
+  <!-- Two lanes: the green one (you) and the grey one alongside (your partner). -->
+  <path d="M 395 686 L 395 655 A 143 143 0 0 1 538 512 L 799 512" fill="none" stroke="#7a7d7b" stroke-width="134" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 225 686 L 225 635 A 287 287 0 0 1 512 348 L 799 348" fill="none" stroke="#30d158" stroke-width="134" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

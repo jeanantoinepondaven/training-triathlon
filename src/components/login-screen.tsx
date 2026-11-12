@@ -23,9 +23,8 @@ export function LoginScreen({ initial }: { initial: "in" | "up" }) {
           ))}
         </div>
         <div className="auth-brand">
-          <span className="auth-icon">
-            <Symbol name="person.2" size={42} weight="semibold" />
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element -- static SVG logo, no optimisation needed */}
+          <img className="auth-icon" src="/logo.svg" alt="" width={84} height={84} />
           <h1>Tandem</h1>
           <p>Training for two</p>
           <div className="auth-sports">

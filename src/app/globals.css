@@ -666,7 +666,7 @@ a { color: inherit; text-decoration: none; }
 @keyframes lanes-drift { from { transform: rotate(-16deg) translateX(-6%); } to { transform: rotate(-16deg) translateX(6%); } }
 .auth-hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, color-mix(in srgb, var(--bg-grouped) 10%, transparent) 0%, color-mix(in srgb, var(--bg-grouped) 35%, transparent) 55%, var(--bg-grouped) 100%); z-index: 1; }
 .auth-brand { position: absolute; z-index: 2; left: 0; right: 0; bottom: 64px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; padding: 0 var(--space-5); }
-.auth-icon { display: grid; place-items: center; width: 84px; height: 84px; border-radius: 22px; background: linear-gradient(160deg, color-mix(in srgb, var(--tint) 88%, #fff) 0%, var(--tint) 55%, color-mix(in srgb, var(--tint) 80%, #000) 100%); color: var(--on-tint); box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 10px 30px rgba(0,0,0,.18); }
+.auth-icon { display: block; width: 84px; height: 84px; border-radius: 20px; box-shadow: 0 0 0 .5px rgba(255,255,255,.12), 0 10px 30px rgba(0,0,0,.28); }
 .auth-brand h1 { margin: 6px 0 0; font: 700 40px/44px var(--font-display); letter-spacing: .3px; }
 .auth-brand p { margin: 0; font: 400 17px/22px var(--font-text); letter-spacing: -0.43px; color: var(--label-secondary); }
 .auth-sports { display: flex; gap: 6px; margin-top: 6px; }
