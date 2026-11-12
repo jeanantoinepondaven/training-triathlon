@@ -751,3 +751,41 @@ a { color: inherit; text-decoration: none; }
 a.hig-session, a.race-hero { color: inherit; text-decoration: none; }
 .sz-w { text-decoration: none; }
 .sz-d { pointer-events: none; }
+
+/* ---------- Health ---------- */
+.tchart { position: relative; touch-action: pan-y; }
+.tchart .band { fill: var(--fill-quaternary); }
+.tchart .zero { stroke: var(--label-tertiary); stroke-width: 1; }
+.tchart .line.s2 { stroke: var(--label-secondary); stroke-width: 2; stroke-dasharray: 5 4; }
+.tchart .raw { fill: var(--tint-ink); opacity: .28; }
+.tchart .bar-pos { fill: var(--tint); }
+.tchart .bar-neg { fill: var(--run); }
+.tchart .mark { stroke: var(--label-tertiary); stroke-width: 1; stroke-dasharray: 2 3; }
+.tchart .marklbl { font: 600 11px var(--font-rounded); fill: var(--label-secondary); }
+.tchart .xhair { stroke: var(--label-tertiary); stroke-width: 1; }
+.tc-legend { display: flex; gap: 14px; margin-bottom: 6px; font: 400 12px/16px var(--font-text); color: var(--label-secondary); }
+.tc-legend .lg { display: inline-flex; align-items: center; gap: 6px; }
+.tc-legend i { display: inline-block; width: 16px; height: 0; border-top: 2.5px solid var(--tint-ink); }
+.tc-legend .k-dash i { border-top: 2px dashed var(--label-secondary); }
+.tc-legend .k-bars i { height: 10px; width: 8px; border: 0; border-radius: 2px; background: var(--tint); }
+.tc-tip { position: absolute; top: 18px; transform: translateX(-10%); display: flex; flex-direction: column; gap: 1px; padding: 6px 10px; border-radius: 12px; font: 400 12px/16px var(--font-text); color: var(--label); pointer-events: none; white-space: nowrap; z-index: 2; }
+.tc-tip b { font-weight: 600; }
+.chart-empty { padding: 18px 0; font: 400 15px/20px var(--font-text); color: var(--label-secondary); text-align: center; }
+.ready { display: flex; flex-direction: column; gap: 10px; padding: 14px var(--space-4) 16px; border-radius: var(--radius-section); background: var(--bg-cell); color: inherit; text-decoration: none; }
+.ready-top { display: flex; align-items: center; gap: 10px; }
+.ready-ic { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 50%; }
+.ready.t-good .ready-ic { background: var(--tint-soft); color: var(--tint-ink); }
+.ready.t-warning .ready-ic { background: var(--run-soft); color: var(--run-ink); }
+.ready.t-serious .ready-ic { background: var(--run); color: #fff; }
+.ready-top b { display: block; font: 600 17px/22px var(--font-text); letter-spacing: -0.43px; }
+.ready-top span { font: 400 13px/18px var(--font-text); color: var(--label-secondary); }
+.ready ul { margin: 0; padding: 0 0 0 18px; font: 400 15px/21px var(--font-text); color: var(--label-secondary); }
+.ready .hint { padding: 8px 10px; border-radius: var(--radius-m); background: var(--fill-quaternary); font: 400 13px/18px var(--font-text); color: var(--label-secondary); }
+.h-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
+.ci-row { display: flex; flex-direction: column; gap: 6px; padding: 10px var(--space-4); }
+.ci-row > span { font: 400 15px/20px var(--font-text); color: var(--label-secondary); }
+.h-mini { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding: 0 var(--space-4) 12px; }
+.h-mini div { display: flex; flex-direction: column; gap: 1px; }
+.h-mini b { font: 600 17px/22px var(--font-rounded); font-variant-numeric: tabular-nums; }
+.h-mini span { font: 400 12px/16px var(--font-text); color: var(--label-secondary); }
+.attr { font: 400 12px/16px var(--font-text); color: var(--label-tertiary); text-align: center; }

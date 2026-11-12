@@ -8,6 +8,7 @@ import {
   jsonb,
   index,
   real,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 import type { WorkoutLog, WorkoutPlan } from "@/lib/plan-types";
 
@@ -29,6 +30,8 @@ export const users = pgTable("users", {
   intervalsConnectedAt: timestamp("intervals_connected_at", { withTimezone: true }),
   intervalsLastSync: timestamp("intervals_last_sync", { withTimezone: true }),
   intervalsLastError: text("intervals_last_error"),
+  /** 1 = the partner can see this person's health page. */
+  shareHealth: integer("share_health").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -115,7 +118,7 @@ export const races = pgTable(
   (t) => [index("races_date_idx").on(t.date)],
 );
 
-export const TARGET_KINDS = ["custom", "e1rm", "volume", "consistency", "best10k", "best5k"] as const;
+export const TARGET_KINDS = ["custom", "e1rm", "volume", "consistency", "best10k", "best5k", "weight", "vo2max"] as const;
 export type TargetKind = (typeof TARGET_KINDS)[number];
 
 /** A goal to work towards. Auto kinds compute "now" from the logged sessions; custom ones are updated by hand. */
@@ -144,6 +147,44 @@ export const targets = pgTable(
   },
   (t) => [index("targets_user_idx").on(t.userId)],
 );
+
+/** One day of health data per person, mirrored from intervals.icu (Garmin) plus the morning check-in. */
+export const wellness = pgTable(
+  "wellness",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    date: date("date").notNull(),
+    restingHR: real("resting_hr"),
+    hrv: real("hrv"),
+    hrvSDNN: real("hrv_sdnn"),
+    sleepSecs: real("sleep_secs"),
+    sleepScore: real("sleep_score"),
+    avgSleepingHR: real("avg_sleeping_hr"),
+    spO2: real("spo2"),
+    respiration: real("respiration"),
+    weight: real("weight"),
+    bodyFat: real("body_fat"),
+    vo2max: real("vo2max"),
+    steps: real("steps"),
+    readiness: real("readiness"),
+    ctl: real("ctl"),
+    atl: real("atl"),
+    rampRate: real("ramp_rate"),
+    /** Subjective, intervals.icu scale: 1 = best … 4 = worst. */
+    soreness: integer("soreness"),
+    fatigue: integer("fatigue"),
+    stress: integer("stress"),
+    mood: integer("mood"),
+    motivation: integer("motivation"),
+    injury: integer("injury"),
+    comments: text("comments"),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.date] })],
+);
+export type Wellness = typeof wellness.$inferSelect;
 
 export type Race = typeof races.$inferSelect;
 export type Target = typeof targets.$inferSelect;

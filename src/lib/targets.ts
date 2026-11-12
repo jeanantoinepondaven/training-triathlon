@@ -4,7 +4,7 @@ import { addDays, formatDay } from "./dates";
 import { estimate1RM } from "./units";
 import type { TargetView } from "./races";
 
-type Ctx = { workouts: Workout[]; today: string; seasonStart: string | null; races: Pick<Race, "id" | "name" | "date">[] };
+type Ctx = { workouts: Workout[]; today: string; seasonStart: string | null; races: Pick<Race, "id" | "name" | "date">[]; health?: { weight: number | null; vo2max: number | null } };
 
 const done = (ws: Workout[]) => ws.filter((w) => w.status === "done");
 
@@ -80,6 +80,9 @@ export function viewTargets(targets: Target[], c: Ctx): TargetView[] {
       // A time only counts once it beats where you started.
       auto = b !== null && b < t.startValue ? b : null;
       note ??= "Best logged run";
+    } else if (t.kind === "weight" || t.kind === "vo2max") {
+      auto = c.health?.[t.kind] ?? null;
+      note ??= "From Garmin";
     }
     const race = t.raceId ? c.races.find((r) => r.id === t.raceId) ?? null : null;
     return {

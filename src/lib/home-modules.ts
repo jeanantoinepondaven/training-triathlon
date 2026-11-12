@@ -1,6 +1,7 @@
 export const HOME_COOKIE = "home_hidden";
 export const HOME_MODULES = [
   { id: "race", label: "Goal race countdown" },
+  { id: "health", label: "Health and readiness" },
   { id: "today", label: "Today" },
   { id: "week", label: "This week, by sport" },
   { id: "races", label: "Races" },

@@ -1,4 +1,4 @@
-import { connectedUserIds, pullActivities } from "@/lib/intervals";
+import { connectedUserIds, pullActivities, pullWellness } from "@/lib/intervals";
 
 // Daily pull for everyone connected (Vercel Cron, see vercel.json). Vercel sends
 // "Authorization: Bearer $CRON_SECRET" when the CRON_SECRET variable is set.
@@ -8,7 +8,7 @@ export async function GET(req: Request) {
   const results: Record<string, unknown> = {};
   for (const id of await connectedUserIds()) {
     try {
-      results[id.slice(0, 8)] = await pullActivities(id);
+      results[id.slice(0, 8)] = { ...(await pullActivities(id)), health: await pullWellness(id).catch(() => 0) };
     } catch (e) {
       results[id.slice(0, 8)] = { error: (e as Error).message };
     }

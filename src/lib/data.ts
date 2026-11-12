@@ -118,3 +118,25 @@ export async function listAllCycles(userId: string) {
   const db = await getDb();
   return db.select().from(cycles).where(eq(cycles.userId, userId)).orderBy(asc(cycles.startDate));
 }
+
+/** Daily health rows from `from` on, oldest first, without the owner id. */
+export async function getHealth(userId: string, from: string) {
+  const db = await getDb();
+  const rows = await db
+    .select()
+    .from(schema.wellness)
+    .where(and(eq(schema.wellness.userId, userId), gte(schema.wellness.date, from)))
+    .orderBy(asc(schema.wellness.date));
+  return rows.map((r) => {
+    const out: Partial<typeof r> = { ...r };
+    delete out.userId;
+    delete out.updatedAt;
+    return out as Omit<typeof r, "userId" | "updatedAt">;
+  });
+}
+
+export async function getShareHealth(userId: string) {
+  const db = await getDb();
+  const [u] = await db.select({ s: users.shareHealth }).from(users).where(eq(users.id, userId));
+  return !!u?.s;
+}

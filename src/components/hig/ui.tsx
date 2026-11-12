@@ -108,10 +108,11 @@ export function SegmentedControl<T extends string>({
   full?: boolean;
   label: string;
 }) {
-  const idx = Math.max(0, options.findIndex((o) => o.value === value));
+  const found = options.findIndex((o) => o.value === value);
+  const idx = Math.max(0, found);
   return (
     <div className={cx("hig-seg", size === "s" && "sz-s", full && "is-full")} role="radiogroup" aria-label={label} style={{ ["--n" as string]: options.length, ["--i" as string]: idx }}>
-      <span className="hig-seg-thumb" aria-hidden="true" />
+      <span className="hig-seg-thumb" aria-hidden="true" style={found < 0 ? { opacity: 0 } : undefined} />
       {options.map((o) => {
         const on = o.value === value;
         const inner = (
@@ -434,7 +435,7 @@ export function SetRow({ index, reps, kg, last, done, onToggle, active, readOnly
   );
 }
 
-export function StatTile({ label, value, unit, icon, delta, down }: { label: string; value: string; unit?: string; icon?: string; delta?: string; down?: boolean }) {
+export function StatTile({ label, value, unit, icon, delta, down, bad, plain }: { label: string; value: string; unit?: string; icon?: string; delta?: string; down?: boolean; bad?: boolean; plain?: boolean }) {
   return (
     <div className="hig-stat">
       <span className="lbl">
@@ -446,8 +447,8 @@ export function StatTile({ label, value, unit, icon, delta, down }: { label: str
         {unit && <small>{unit}</small>}
       </span>
       {delta && (
-        <span className={cx("delta", down && "is-down")}>
-          <Symbol name={down ? "arrow.down.right" : "arrow.up.right"} size={13} weight="bold" />
+        <span className={cx("delta", (bad ?? down) && "is-down")}>
+          {!plain && <Symbol name={down ? "arrow.down.right" : "arrow.up.right"} size={13} weight="bold" />}
           {delta}
         </span>
       )}

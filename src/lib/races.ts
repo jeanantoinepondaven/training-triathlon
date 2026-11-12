@@ -87,6 +87,8 @@ export const TARGET_KIND_WORD: Record<Target["kind"], string> = {
   consistency: "Consistency",
   best10k: "10 km time",
   best5k: "5 km time",
+  weight: "Body weight",
+  vo2max: "VO2max",
 };
 
 export function tPct(t: Pick<TargetView, "startValue" | "now" | "goalValue" | "lowerIsBetter">): number {

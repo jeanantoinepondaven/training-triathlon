@@ -1,6 +1,6 @@
 import "server-only";
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
-import { and, eq, gte, inArray, isNotNull, lte } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, lte, sql } from "drizzle-orm";
 import { getDb, schema } from "@/db";
 import type { Workout } from "@/db/schema";
 import type { WorkoutPlan } from "./plan-types";
@@ -245,4 +245,57 @@ export async function connectedUserIds(): Promise<string[]> {
   const db = await getDb();
   const rows = await db.select({ id: users.id }).from(users).where(isNotNull(users.intervalsKey));
   return rows.map((r) => r.id);
+}
+
+// ---------------------------------------------------------------- health (wellness) ⇄ intervals.icu
+type ApiWellness = Partial<Record<string, number | string | boolean | null>> & { id: string };
+
+const W_NUM = ["restingHR", "hrv", "hrvSDNN", "sleepSecs", "sleepScore", "avgSleepingHR", "spO2", "respiration", "weight", "bodyFat", "vo2max", "steps", "readiness", "ctl", "atl", "rampRate"] as const;
+const W_INT = ["soreness", "fatigue", "stress", "mood", "motivation", "injury"] as const;
+
+/** Pull daily health records (first time: the last 180 days, then the last 7). Returns the number of days stored. */
+export async function pullWellness(userId: string, opts: { days?: number } = {}): Promise<number> {
+  const creds = await credsFor(userId);
+  if (!creds) return 0;
+  const db = await getDb();
+  const t = today();
+  const [have] = await db.select({ date: schema.wellness.date }).from(schema.wellness).where(eq(schema.wellness.userId, userId)).limit(1);
+  const oldest = addDays(t, -(opts.days ?? (have ? 7 : 180)));
+  const rows = (await call<ApiWellness[]>(creds, "GET", `/wellness?oldest=${oldest}&newest=${t}`)) ?? [];
+  const vals = rows
+    .filter((r) => typeof r.id === "string" && /^\d{4}-\d{2}-\d{2}$/.test(r.id))
+    .map((r) => {
+      const v: typeof schema.wellness.$inferInsert = { userId, date: r.id, updatedAt: new Date() };
+      for (const k of W_NUM) v[k] = typeof r[k] === "number" ? (r[k] as number) : null;
+      for (const k of W_INT) v[k] = typeof r[k] === "number" && (r[k] as number) > 0 ? Math.round(r[k] as number) : null;
+      v.comments = typeof r.comments === "string" ? r.comments.slice(0, 500) : null;
+      return v;
+    })
+    .filter((v) => [...W_NUM, ...W_INT].some((k) => v[k] != null));
+  for (let i = 0; i < vals.length; i += 100) {
+    const chunk = vals.slice(i, i + 100);
+    await db
+      .insert(schema.wellness)
+      .values(chunk)
+      .onConflictDoUpdate({
+        target: [schema.wellness.userId, schema.wellness.date],
+        // Garmin numbers follow intervals.icu; the check-in keeps a local answer if intervals.icu has none.
+        set: Object.fromEntries([
+          ...[...W_NUM, "comments", "updatedAt"].map((k) => [k, sql.raw(`excluded."${toSnake(k)}"`)]),
+          ...W_INT.map((k) => [k, sql.raw(`coalesce(excluded."${toSnake(k)}", "wellness"."${toSnake(k)}")`)]),
+        ]),
+      });
+  }
+  return vals.length;
+}
+
+function toSnake(k: string) {
+  return { restingHR: "resting_hr", hrvSDNN: "hrv_sdnn", spO2: "spo2", avgSleepingHR: "avg_sleeping_hr", updatedAt: "updated_at" }[k] ?? k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+}
+
+/** Write the morning check-in back to intervals.icu (so it shows there and in its fitness model). */
+export async function pushCheckIn(userId: string, date: string, v: Partial<Record<(typeof W_INT)[number], number | null>>): Promise<void> {
+  const creds = await credsFor(userId);
+  if (!creds) return;
+  await call(creds, "PUT", `/wellness/${date}`, { id: date, ...v });
 }

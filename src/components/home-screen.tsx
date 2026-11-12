@@ -16,6 +16,8 @@ import type { TargetView } from "@/lib/races";
 import { HOME_MODULES, type HomeModule } from "@/lib/home-modules";
 import { addDays, diffDays, formatDay, isoWeek, mondayOf } from "@/lib/dates";
 import { hm } from "@/lib/sport";
+import { fmtSleep, formZone, latest, readiness, type HealthDay } from "@/lib/health";
+import { ReadinessCard } from "@/components/health-screen";
 
 export type HomeSession = WW & { minutes: number };
 type SeasonCycle = { name: string; start: string; focus: string[] };
@@ -49,7 +51,9 @@ export function HomeScreen({
   load,
   highlight,
   autoNow,
+  health,
 }: {
+  health: HealthDay[];
   me: Person;
   partner: Person | null;
   today: string;
@@ -167,6 +171,44 @@ export function HomeScreen({
         </div>,
       );
     }
+  }
+
+  /* 1b. Health */
+  if (mods.health) {
+    const r = readiness(health, today);
+    const hrv = latest(health, "hrv", today, 1);
+    const rhr = latest(health, "restingHR", today, 1);
+    const sl = latest(health, "sleepSecs", today, 1);
+    const ctl = latest(health, "ctl", today, 3);
+    const atl = latest(health, "atl", today, 3);
+    const form = ctl && atl ? Math.round(ctl.v - atl.v) : null;
+    const hard = todays.some((s) => s.status === "planned" && /interval|threshold|tempo|vo2|race|track|sprint|hill|kick|400|800|1000|fartlek|surge/i.test(s.title));
+    const rr = r.tone !== "good" && hard ? { ...r, hint: `Today has a hard session. ${r.hint ?? ""}`.trim() } : { ...r, hint: r.tone === "good" ? null : r.hint };
+    out.push(
+      <div key="health" className="stack">
+        <ReadinessCard r={rr} href="/health" sub={r.hasData ? "Health · today" : "Health"} />
+        {(hrv || rhr || sl || form != null) && (
+          <div className="h-mini" style={{ padding: 0 }}>
+            <div>
+              <b>{hrv ? Math.round(hrv.v) : "–"}</b>
+              <span>HRV ms</span>
+            </div>
+            <div>
+              <b>{rhr ? Math.round(rhr.v) : "–"}</b>
+              <span>Resting HR</span>
+            </div>
+            <div>
+              <b>{sl ? fmtSleep(sl.v).replace(" h ", ":") : "–"}</b>
+              <span>Sleep</span>
+            </div>
+            <div>
+              <b>{form != null ? (form > 0 ? `+${form}` : form) : "–"}</b>
+              <span>{form != null ? formZone(form).label.split(":")[0] : "Form"}</span>
+            </div>
+          </div>
+        )}
+      </div>,
+    );
   }
 
   /* 2. Today */

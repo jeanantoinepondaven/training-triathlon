@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { requireUser } from "@/lib/auth";
-import { getAllWorkouts, getWorkoutsBetween, listAllCycles, listRaces, listTargets, listUsers } from "@/lib/data";
+import { getHealth, getAllWorkouts, getWorkoutsBetween, listAllCycles, listRaces, listTargets, listUsers } from "@/lib/data";
 import { addDays, diffDays, mondayOf, today as getToday } from "@/lib/dates";
 import { estimateMinutes, focusLabel } from "@/lib/sport";
 import { computeProgress } from "@/lib/progress";
@@ -32,7 +32,8 @@ export default async function HomePage() {
   const sunday = addDays(monday, 6);
   const [people, races, all, cycles, targets, jar] = await Promise.all([listUsers(), listRaces(), getAllWorkouts(me.id), listAllCycles(me.id), listTargets(me.id), cookies()]);
   const partner = people.find((p) => p.id !== me.id) ?? null;
-  const partnerWeek = partner ? await getWorkoutsBetween(partner.id, monday, sunday) : [];
+  const [partnerWeek, health] = await Promise.all([partner ? getWorkoutsBetween(partner.id, monday, sunday) : Promise.resolve([]), getHealth(me.id, addDays(today, -60))]);
+  const lastOf = (k: "weight" | "vo2max") => [...health].reverse().find((d) => d[k] != null)?.[k] ?? null;
 
   const hidden = (jar.get(HOME_COOKIE)?.value ?? "").split(",").filter(Boolean);
   const visible = racesFor(races, me.id);
@@ -70,7 +71,7 @@ export default async function HomePage() {
     if (rec) highlight = { title: `${rec.label}: ${rec.value}`, sub: "A personal record from the last three weeks." };
   }
 
-  const autoNow = autoNowFor(all, today, seasonStart);
+  const autoNow = { ...autoNowFor(all, today, seasonStart), weight: lastOf("weight"), vo2max: lastOf("vo2max") };
 
   return (
     <HomeScreen
@@ -79,7 +80,7 @@ export default async function HomePage() {
       today={today}
       hidden={hidden}
       races={visible}
-      targets={viewTargets(targets, { workouts: all, today, seasonStart, races })}
+      targets={viewTargets(targets, { workouts: all, today, seasonStart, races, health: { weight: lastOf("weight"), vo2max: lastOf("vo2max") } })}
       week={all.filter((w) => w.date >= monday && w.date <= sunday).map(slim)}
       partnerWeek={partnerWeek.map(slim)}
       season={season}
@@ -87,6 +88,7 @@ export default async function HomePage() {
       load={load}
       highlight={highlight}
       autoNow={autoNow}
+      health={health}
     />
   );
 }

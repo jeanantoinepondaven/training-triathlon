@@ -7,7 +7,7 @@ import { requireUser } from "@/lib/auth";
 import { getOwnedWorkout } from "@/lib/data";
 import { addDays, isISODate, today } from "@/lib/dates";
 import { canSendToWatch } from "@/lib/intervals-format";
-import { checkCredentials, pullActivities, removeFromWatch, sealKey, sendToWatch } from "@/lib/intervals";
+import { checkCredentials, pullActivities, pullWellness, removeFromWatch, sealKey, sendToWatch } from "@/lib/intervals";
 
 export type ConnectState = { error?: string; ok?: string } | undefined;
 
@@ -29,6 +29,10 @@ export async function connectIntervals(_: ConnectState, form: FormData): Promise
       const r = await pullActivities(user.id);
       note = r.matched + r.added ? ` ${r.matched + r.added} recent session${r.matched + r.added > 1 ? "s" : ""} synced.` : "";
     } catch {}
+    try {
+      const h = await pullWellness(user.id);
+      if (h) note += ` ${h} days of health data.`;
+    } catch {}
     revalidatePath("/", "layout");
     return { ok: `Connected to ${a.name}.${note}` };
   } catch (e) {
@@ -47,29 +51,31 @@ export async function disconnectIntervals() {
 }
 
 /** Pull now (Settings and the week menu). */
-export async function syncNow(): Promise<{ matched: number; added: number; error?: string }> {
+export async function syncNow(): Promise<{ matched: number; added: number; health?: number; error?: string }> {
   const user = await requireUser();
   try {
     const r = await pullActivities(user.id, { days: 14 });
-    if (r.matched + r.added) revalidatePath("/", "layout");
-    return r;
+    const health = await pullWellness(user.id, { days: 14 });
+    revalidatePath("/", "layout");
+    return { ...r, health };
   } catch (e) {
     return { matched: 0, added: 0, error: (e as Error).message };
   }
 }
 
 /** Called when the app opens: pulls at most every 15 minutes, silently. */
-export async function autoSync(): Promise<{ matched: number; added: number }> {
+export async function autoSync(): Promise<{ matched: number; added: number; health: number }> {
   const user = await requireUser();
   const db = await getDb();
   const [u] = await db.select({ key: schema.users.intervalsKey, last: schema.users.intervalsLastSync }).from(schema.users).where(eq(schema.users.id, user.id));
-  if (!u?.key || (u.last && Date.now() - u.last.getTime() < 15 * 60 * 1000)) return { matched: 0, added: 0 };
+  if (!u?.key || (u.last && Date.now() - u.last.getTime() < 15 * 60 * 1000)) return { matched: 0, added: 0, health: 0 };
   try {
     const r = await pullActivities(user.id);
-    if (r.matched + r.added) revalidatePath("/", "layout");
-    return r;
+    const health = await pullWellness(user.id).catch(() => 0);
+    if (r.matched + r.added + health) revalidatePath("/", "layout");
+    return { ...r, health };
   } catch {
-    return { matched: 0, added: 0 };
+    return { matched: 0, added: 0, health: 0 };
   }
 }
 

@@ -18,6 +18,8 @@ export type AutoNow = {
   best10k: number | null;
   best5k: number | null;
   volume: Record<"swim" | "bike" | "run" | "all", number>;
+  weight: number | null;
+  vo2max: number | null;
 };
 
 const dm = (d: string) => formatDay(d, { day: "numeric", month: "short" });
@@ -236,12 +238,13 @@ export function TargetRow({ t, today, onOpen }: { t: TargetView; today: string; 
   );
 }
 
-type TType = "race" | "e1rm" | "volume" | "consistency" | "custom";
+type TType = "race" | "e1rm" | "volume" | "consistency" | "body" | "custom";
 const TTYPES: { v: TType; label: string; icon: string }[] = [
   { v: "race", label: "Race time", icon: "flag" },
   { v: "e1rm", label: "Strength", icon: "dumbbell" },
   { v: "volume", label: "Volume", icon: "chart.bar" },
   { v: "consistency", label: "Consistency", icon: "checkmark" },
+  { v: "body", label: "Body", icon: "heart" },
   { v: "custom", label: "Custom", icon: "target" },
 ];
 
@@ -265,6 +268,7 @@ export function AddTargetSheet({ today, races, autoNow, raceId, onClose }: { tod
   const [dist, setDist] = useState<"best10k" | "best5k">("best10k");
   const [exercise, setExercise] = useState(Object.keys(autoNow.e1rm)[0] ?? "");
   const [volSport, setVolSport] = useState<"swim" | "bike" | "run" | "all">("run");
+  const [bodyKey, setBodyKey] = useState<"weight" | "vo2max">("weight");
   const [sport, setSport] = useState<Sport>("run");
   const [title, setTitle] = useState("");
   const [now, setNow] = useState("");
@@ -273,12 +277,12 @@ export function AddTargetSheet({ today, races, autoNow, raceId, onClose }: { tod
 
   const isTime = type === "race" || (type === "custom" && (goal.includes(":") || now.includes(":")));
   const autoVal: number | null =
-    type === "race" ? autoNow[dist] : type === "e1rm" ? autoNow.e1rm[exercise] ?? null : type === "volume" ? autoNow.volume[volSport] : type === "consistency" ? autoNow.consistency : null;
+    type === "race" ? autoNow[dist] : type === "e1rm" ? autoNow.e1rm[exercise] ?? null : type === "volume" ? autoNow.volume[volSport] : type === "consistency" ? autoNow.consistency : type === "body" ? autoNow[bodyKey] : null;
   const startVal = type === "volume" ? 0 : type === "consistency" ? 0 : autoVal ?? (isTime ? parseTime(now) : num(now));
   const goalVal = isTime ? parseTime(goal) : num(goal);
-  const unitOut = isTime ? "time" : type === "e1rm" ? "kg" : type === "volume" ? "km" : type === "consistency" ? "%" : unit.trim() || null;
+  const unitOut = isTime ? "time" : type === "body" ? (bodyKey === "weight" ? "kg" : null) : type === "e1rm" ? "kg" : type === "volume" ? "km" : type === "consistency" ? "%" : unit.trim() || null;
   const r = ups.find((x) => x.id === race);
-  const fmt = (x: number) => (isTime ? fmtTime(x) : `${x}${unitOut === "%" ? "%" : unitOut ? ` ${unitOut}` : ""}`);
+  const fmt = (x: number) => (isTime ? fmtTime(x) : `${Math.round(x * 10) / 10}${unitOut === "%" ? "%" : unitOut ? ` ${unitOut}` : ""}`);
   const autoTitle =
     goalVal === null
       ? ""
@@ -290,15 +294,19 @@ export function AddTargetSheet({ today, races, autoNow, raceId, onClose }: { tod
             ? `${volSport === "all" ? "Train" : SPORT_WORD[volSport]} ${goalVal} km${r ? ` before ${r.name}` : " this season"}`
             : type === "consistency"
               ? `Do ${goalVal}% of sessions`
-              : "";
+              : type === "body"
+                ? bodyKey === "weight"
+                  ? `Race weight ${goalVal} kg`
+                  : `VO2max ${goalVal}`
+                : "";
   const finalTitle = title.trim() || autoTitle;
   const ok = !!finalTitle && startVal !== null && goalVal !== null && (type !== "e1rm" || !!exercise) && startVal !== goalVal && !pending;
 
   const go = () => {
     if (!ok) return;
     const v: TargetInput = {
-      kind: type === "race" ? dist : type,
-      sport: type === "race" ? "run" : type === "e1rm" ? "gym" : type === "volume" ? (volSport === "all" ? "other" : volSport) : type === "consistency" ? "other" : sport,
+      kind: type === "race" ? dist : type === "body" ? bodyKey : type,
+      sport: type === "race" ? "run" : type === "e1rm" ? "gym" : type === "volume" ? (volSport === "all" ? "other" : volSport) : type === "consistency" || type === "body" ? "other" : sport,
       title: finalTitle,
       metricKey: type === "e1rm" ? exercise : type === "volume" ? volSport : null,
       startValue: startVal!,
@@ -366,6 +374,16 @@ export function AddTargetSheet({ today, races, autoNow, raceId, onClose }: { tod
           </Pill>
         </div>
       )}
+      {type === "body" && (
+        <div className="pills" role="radiogroup" aria-label="Measure">
+          <Pill icon="heart" selected={bodyKey === "weight"} onClick={() => setBodyKey("weight")}>
+            Weight
+          </Pill>
+          <Pill icon="heart" selected={bodyKey === "vo2max"} onClick={() => setBodyKey("vo2max")}>
+            VO2max
+          </Pill>
+        </div>
+      )}
       {type === "custom" && (
         <div className="pills" role="radiogroup" aria-label="Sport">
           {(["swim", "bike", "run", "gym", "other"] as const).map((s) => (
@@ -379,14 +397,18 @@ export function AddTargetSheet({ today, races, autoNow, raceId, onClose }: { tod
           type === "custom"
             ? "You update “now” yourself. Times like 36:45 count down."
             : autoVal !== null
-              ? `Now comes from your logged sessions${type === "volume" ? " since the season started" : ""} and updates on its own.`
+              ? type === "body"
+                ? "Now comes from Garmin (via intervals.icu) and updates on its own."
+                : `Now comes from your logged sessions${type === "volume" ? " since the season started" : ""} and updates on its own.`
               : type === "race"
                 ? "No logged run that long yet: enter your current best. It updates when you log a faster one."
-                : "Tracked from your logged sessions."
+                : type === "body"
+                  ? "No Garmin value yet: enter today's. It updates once Garmin syncs."
+                  : "Tracked from your logged sessions."
         }
       >
         {type === "custom" || (autoVal === null && type !== "volume" && type !== "consistency") ? (
-          <Field id="tg-now" label="Now" inputMode={isTime ? "numeric" : "decimal"} placeholder={isTime ? "36:45" : type === "e1rm" ? "100" : "120"} suffix={type === "e1rm" ? "kg" : undefined} value={now} onChange={setNow} />
+          <Field id="tg-now" label="Now" inputMode={isTime ? "numeric" : "decimal"} placeholder={isTime ? "36:45" : type === "e1rm" ? "100" : "120"} suffix={type === "e1rm" || (type === "body" && bodyKey === "weight") ? "kg" : undefined} value={now} onChange={setNow} />
         ) : (
           <div className="hig-row">
             <div className="hig-row-text">
@@ -399,8 +421,8 @@ export function AddTargetSheet({ today, races, autoNow, raceId, onClose }: { tod
           id="tg-goal"
           label="Goal"
           inputMode={isTime ? "numeric" : "decimal"}
-          placeholder={type === "race" ? (dist === "best10k" ? "35:00" : "16:30") : type === "e1rm" ? "120" : type === "volume" ? "1000" : type === "consistency" ? "85" : "400"}
-          suffix={type === "e1rm" ? "kg" : type === "volume" ? "km" : type === "consistency" ? "%" : undefined}
+          placeholder={type === "race" ? (dist === "best10k" ? "35:00" : "16:30") : type === "e1rm" ? "120" : type === "volume" ? "1000" : type === "consistency" ? "85" : type === "body" ? (bodyKey === "weight" ? "72" : "65") : "400"}
+          suffix={type === "e1rm" || (type === "body" && bodyKey === "weight") ? "kg" : type === "volume" ? "km" : type === "consistency" ? "%" : undefined}
           value={goal}
           onChange={setGoal}
         />
