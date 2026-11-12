@@ -53,8 +53,9 @@ def header(ws, row, labels, widths=None):
 ws = wb.active
 ws.title = "Weekly plan"
 cols = ["Week", "Block", "Phase", "Week type", "Monday", "Swim km", "Swim h", "Bike h", "Run km", "Run h", "Gym sessions",
-        "Gym h", "Race / test h", "Total h", "Endurance h", "Intensity h", "Intensity %", "Load ratio (vs 4-wk avg)", "10 km pace target", "Test / race"]
-header(ws, 1, cols, [7, 13, 10, 11, 12, 9, 8, 8, 9, 8, 9, 8, 9, 9, 10, 10, 10, 12, 11, 44])
+        "Gym h", "Race / test h", "Total h", "Endurance h", "Intensity h", "Intensity %", "Load ratio (vs 4-wk avg)", "10 km pace target", "Test / race",
+        "Snowboard h (optional)", "Winter"]
+header(ws, 1, cols, [7, 15, 10, 11, 12, 9, 8, 8, 9, 8, 9, 8, 9, 9, 10, 10, 10, 12, 11, 44, 12, 8])
 for i, w in enumerate(W, start=2):
     r = i
     vals = [i - 1, f"{w['block']:02d} · {w['block_name']}", w["phase"], w["type"], dt.date.fromisoformat(w["monday"]),
@@ -70,6 +71,9 @@ for i, w in enumerate(W, start=2):
     ws.cell(row=r, column=18, value=f"=IF(ROW()<6,1,N{r}/AVERAGE(N{max(2, r - 4)}:N{r - 1}))" if r > 2 else 1)
     ws.cell(row=r, column=19, value=w["pace_10k"]).font = INPUT
     ws.cell(row=r, column=20, value=w["event"] or None).font = N
+    ws.cell(row=r, column=21, value=w["xtrain_h"]).font = INPUT
+    ws.cell(row=r, column=21).number_format = "0.0"
+    ws.cell(row=r, column=22, value="Yes" if w["winter"] else "").font = N
     for c in range(14, 19):
         ws.cell(row=r, column=c).font = N
     for c in (6, 7, 8, 9, 10, 12, 13, 14, 15, 16):
@@ -79,26 +83,27 @@ for i, w in enumerate(W, start=2):
 last = len(W) + 1
 tot = last + 1
 ws.cell(row=tot, column=1, value="Total").font = B
-for c, fmt in ((6, "0"), (7, "0"), (8, "0"), (9, "0"), (10, "0"), (11, "0"), (12, "0"), (13, "0"), (14, "0"), (15, "0"), (16, "0")):
+for c, fmt in ((6, "0"), (7, "0"), (8, "0"), (9, "0"), (10, "0"), (11, "0"), (12, "0"), (13, "0"), (14, "0"), (15, "0"), (16, "0"), (21, "0")):
     col = get_column_letter(c)
     cell = ws.cell(row=tot, column=c, value=f"=SUM({col}2:{col}{last})")
     cell.font, cell.number_format = B, fmt
 ws.cell(row=tot, column=17, value=f"=P{tot}/O{tot}").number_format = "0%"
 ws.cell(row=tot, column=17).font = B
 ws.cell(row=tot + 1, column=1, value="Avg / wk").font = B
-for c in (6, 8, 9, 14):
+for c in (6, 8, 9, 14, 21):
     col = get_column_letter(c)
     cell = ws.cell(row=tot + 1, column=c, value=f"=AVERAGE({col}2:{col}{last})")
     cell.font, cell.number_format = B, "0.0"
 ws.freeze_panes = "F2"
-ws.auto_filter.ref = f"A1:T{last}"
-ws.conditional_formatting.add(f"A2:T{last}", FormulaRule(formula=['$D2="Recovery"'], fill=REC_FILL))
-ws.conditional_formatting.add(f"A2:T{last}", FormulaRule(formula=['$D2="Race"'], fill=RACE_FILL))
+ws.auto_filter.ref = f"A1:V{last}"
+ws.conditional_formatting.add(f"A2:V{last}", FormulaRule(formula=['$D2="Easy"'], fill=REC_FILL))
+ws.conditional_formatting.add(f"A2:V{last}", FormulaRule(formula=['$D2="Race"'], fill=RACE_FILL))
 ws.conditional_formatting.add(f"R2:R{last}", FormulaRule(formula=[f"R2>1.3"], font=Font(name=F, color="C8281B", bold=True)))
 note_r = tot + 3
 for k, t in enumerate([
     "Blue numbers come from the generator (scripts/season/generate.py); black cells are formulas.",
-    "Green rows = calmer (recovery) weeks. Yellow rows = race weeks (taper).",
+    "Green rows = easy weeks (every 4th week). Yellow rows = race weeks (taper). Winter = Dec to mid-March: indoor riding, 3 gym sessions, football, snowboard.",
+    "Snowboard hours are optional cross-training and are NOT in Total h (Saturday is snowboard OR an indoor ride). Football is counted as a run.",
     "Intensity h = time at threshold or above (incl. race-pace and VO2 work). Target ≈ 15–22% of endurance time in build/specific.",
     "Load ratio = this week's hours / average of the previous 4 weeks. Above 1.3 (red) is a spike to watch.",
     "Hours are estimates from planned durations and target paces; your logged sessions in the app are the truth.",
@@ -111,15 +116,15 @@ header(bs, 1, ["Block", "Phase", "Start", "End", "Total h", "Avg h / wk (load we
        [16, 10, 12, 12, 9, 12, 9, 9, 9, 10, 60])
 for i, b in enumerate(data["blocks"], start=2):
     name = f"{b['n']:02d} · {b['name']}"
-    start = dt.date.fromisoformat(data["start"]) + dt.timedelta(weeks=3 * (b["n"] - 1))
+    start = dt.date.fromisoformat(next(w["monday"] for w in W if w["block"] == b["n"]))
     bs.cell(row=i, column=1, value=name).font = B
     bs.cell(row=i, column=2, value=b["phase"].capitalize()).font = N
     bs.cell(row=i, column=3, value=start).number_format = "dd mmm yy"
-    bs.cell(row=i, column=4, value=f"=C{i}+20").number_format = "dd mmm yy"
+    bs.cell(row=i, column=4, value=f"=C{i}+{7 * b['weeks'] - 1}").number_format = "dd mmm yy"
     rng = lambda col: f"'Weekly plan'!${col}$2:${col}${last}"
     crit = f"'Weekly plan'!$B$2:$B${last},A{i}"
     bs.cell(row=i, column=5, value=f"=SUMIFS({rng('N')},{crit})")
-    bs.cell(row=i, column=6, value=f"=AVERAGEIFS({rng('N')},{crit},'Weekly plan'!$D$2:$D${last},\"<>Recovery\",'Weekly plan'!$D$2:$D${last},\"<>Race\")")
+    bs.cell(row=i, column=6, value=f"=AVERAGEIFS({rng('N')},{crit},'Weekly plan'!$D$2:$D${last},\"<>Easy\",'Weekly plan'!$D$2:$D${last},\"<>Race\")")
     bs.cell(row=i, column=7, value=f"=SUMIFS({rng('F')},{crit})")
     bs.cell(row=i, column=8, value=f"=SUMIFS({rng('H')},{crit})")
     bs.cell(row=i, column=9, value=f"=SUMIFS({rng('I')},{crit})")
@@ -156,7 +161,7 @@ colors = ["0D9488", "2B83D9", "E0560B", "7655E3"]
 for s, colr in zip(c1.series, colors):
     s.graphicalProperties.solidFill = colr
     s.graphicalProperties.line.solidFill = colr
-place(c1, "A4", "Weekly hours by sport (stacked) — 2 load weeks + 1 calmer week", "Hours")
+place(c1, "A4", "Weekly hours by sport (stacked) — 3 load weeks + 1 easy week", "Hours")
 
 c2 = LineChart()
 for col, colr in ((9, "E0560B"), (6, "0D9488")):
@@ -190,7 +195,7 @@ place(c4, "A61", "Load ratio (week vs previous 4-week average) — keep most wee
 # ------------------------------------------------------------------ Zones
 zs = wb.create_sheet("Zones")
 zs["A1"] = "Training zones"; zs["A1"].font = H1
-zs["A2"] = "Yellow cells are yours to fill after each test week (blocks 1, 4, 7). Everything else recalculates."; zs["A2"].font = N
+zs["A2"] = "Yellow cells are yours to fill after each test week (intro, end of base, end of build). Everything else recalculates."; zs["A2"].font = N
 zs["A4"] = "Bike FTP (W)"; zs["A4"].font = B
 zs["B4"] = 280; zs["B4"].font = INPUT; zs["B4"].fill = KEY
 zs["B4"].comment = Comment("Placeholder. Replace with 95% of your 20-min test power (first test: block 1, week 3).", "Plan")
@@ -243,7 +248,7 @@ gs["A1"] = "Gym plan by phase (your circuit format)"; gs["A1"].font = H1
 gs["A2"] = "Circuit A = 4 rounds of 4 exercises back to back, 2–5 min rest between rounds by intensity. Block B = 3 exercises, 3–4 sets."; gs["A2"].font = N
 header(gs, 4, ["Phase", "Session", "Part", "Exercise", "Sets", "Reps", "Load", "Rest", "Notes"], [10, 30, 10, 26, 6, 10, 18, 8, 40])
 r = 5
-order = [("base", "A"), ("base", "B"), ("build", "A"), ("build", "B"), ("specific", "A"), ("recovery", "A")]
+order = [("base", "A"), ("base", "B"), ("winter", "C"), ("build", "A"), ("build", "B"), ("specific", "A"), ("recovery", "A")]
 for key in order:
     title, desc, exs = G.GYM[key]
     for e in exs:
@@ -254,41 +259,46 @@ for key in order:
             gs.cell(row=r, column=c, value=v).font = N
         r += 1
     r += 1
-gs.cell(row=r + 1, column=1, value="Frequency: base & build 2 per load week (A heavy on Tuesday, B power on Thursday); specific & peak 1 per week; recovery weeks 1 light; none in race week.").font = B
+gs.cell(row=r + 1, column=1, value="Frequency: winter (Dec–mid Mar) 3 per load week (C circuit Mon, A heavy Tue, B power Thu); spring build 2; specific & peak 1; easy weeks 1 light; none in race week.").font = B
 
 # ------------------------------------------------------------------ Method (first tab)
 ms = wb.create_sheet("Method", 0)
 ms.column_dimensions["A"].width = 28
 ms.column_dimensions["B"].width = 100
 ms["A1"] = "Season 2026–27 · " + G.ATHLETE; ms["A1"].font = H1
-ms["A2"] = f"16 Nov 2026 → 5 Sep 2027 · 14 blocks of 3 weeks · generated {dt.date.today().isoformat()}"; ms["A2"].font = N
+ms["A2"] = f"16 Nov 2026 → 5 Sep 2027 · 2-week intro + 10 blocks of 4 weeks (3 load + 1 easy) · generated {dt.date.today().isoformat()}"; ms["A2"].font = N
 LOADW = [w for w in W if w["type"] in ("Load", "Load+")]
 tot_h = lambda w: w["swim_h"] + w["bike_h"] + w["run_h"] + w["gym_h"] + w["other_h"]
 hb = [tot_h(w) for w in LOADW if w["phase"] == "Base"]
 hbu = [tot_h(w) for w in LOADW if w["phase"] == "Build"]
 hs = [tot_h(w) for w in LOADW if w["phase"] in ("Specific", "Peak")]
 VOLUME_TEXT = (f"Load weeks: base {min(hb):.0f}–{max(hb):.0f} h, build {min(hbu):.0f}–{max(hbu):.0f} h, specific/peak {min(hs):.0f}–{max(hs):.0f} h "
-               f"(calmer weeks ~55–65% of that). Swim {min(w['swim_km'] for w in LOADW):.0f}–{max(w['swim_km'] for w in LOADW):.0f} km/week, "
+               f"(easy weeks ~55–65% of that). Swim {min(w['swim_km'] for w in LOADW):.0f}–{max(w['swim_km'] for w in LOADW):.0f} km/week, "
                f"run {min(w['run_km'] for w in LOADW):.0f}–{max(w['run_km'] for w in LOADW):.0f} km/week, bike {min(w['bike_h'] for w in LOADW):.1f}–{max(w['bike_h'] for w in LOADW):.1f} h/week. "
                f"Season total ≈ {sum(tot_h(w) for w in W):.0f} h.")
 rows = [
     ("GOALS", None),
     ("National team", "Top 5 at Guatemalan national championships / selection races (sprint and Olympic, draft-legal)."),
-    ("Run", f"10 km off the bike / open: {data['run_now']} /km-pace now → 35:00 (3:30 /km) by late June. Assumed 10 km — confirm."),
+    ("Run", f"10 km: {data['run_now']} now (3:40 /km) → {data['run_goal']} (3:30 /km) by Peak 1 in early July. Assumed 10 km — confirm."),
     ("Bike", "Hold 38–40 km/h in Olympic and sprint races: in draft-legal racing this means making the front pack and surviving surges, not solo power."),
     ("Swim", "Exit with the front pack: the swim decides which bike group you race in. Biggest lever for top 5."),
     ("STRUCTURE", None),
-    ("2 + 1 blocks", "Every block is 2 load weeks (week 2 ≈ +8%) then 1 calmer week at ~60% of the load, as you asked. Tests and B races sit in the calmer weeks, A races in taper weeks."),
-    ("Phases", "Base (Nov–Jan): aerobic volume, technique, max strength · Build (Feb–Apr): threshold in all three sports, strength → power · Specific (May–Aug): race pace, draft-legal surges, bricks, power maintenance · Peak (late Jun, late Aug): sharpen + taper."),
+    ("3 + 1 blocks", "Every block is 3 load weeks (+6%, +11%) then 1 easy week at ~55–65% of the load. A 2-week intro block (Nov) eases you in and sets the baseline tests. Tests and B races sit in easy weeks, A races in taper weeks."),
+    ("Phases", "Intro (2 wk) · Base (Dec–Feb): aerobic volume, technique, max strength · Build (late Feb–mid May): threshold in all three sports, strength → power · Specific (May–Jun, Jul): race pace, draft-legal surges, bricks · Peak 1 (A race ~11 Jul) · Peak 2 (A race 5 Sep)."),
     ("Intensity", "Mostly easy (~80%), hard days really hard (~15–22% at threshold or above in build/specific). Hard/easy rhythm: Tue and Sat hard, Wed moderate, Mon/Thu/Fri easy, Sun long and easy."),
-    ("Week layout", "Mon swim + easy spin · Tue run quality + Gym A · Wed swim CSS + bike quality · Thu easy run + Gym B (or swim speed in specific) · Fri swim · Sat long ride (+ brick) · Sun long run."),
+    ("Week layout (spring/summer)", "Mon swim + easy spin · Tue run quality + Gym A · Wed swim CSS + bike quality · Thu easy run + Gym B (or swim speed in specific) · Fri swim · Sat long ride (+ brick) · Sun long run."),
+    ("Week layout (winter)", "Mon swim + Gym C circuit · Tue run quality + Gym A · Wed swim + football at noon · Thu indoor bike quality + Gym B · Fri swim + indoor endurance ride · Sat snowboard (or indoor ride) · Sun long run."),
+    ("WINTER", None),
+    ("Riding", "Dec to mid-March: 2 indoor rides a week (1 quality, 1 endurance, ~2.5 h). The gym takes the freed time (3 sessions). From mid-March rides grow back over 4 weeks (70% → 100%)."),
+    ("Football", "Counts as a run (~6.5 km, intermittent). It replaces the easy run, not the quality run or the long run. Good for speed and agility; warm up the ankles. Easy weeks: play at 80%. Not in test weeks."),
+    ("Snowboard", "Real cross-training (legs, balance, core) but not aerobic triathlon work, and it tires the legs eccentrically. Saturday = snowboard or indoor ride. Keep Sunday's long run easy after a board day; if you ride both days, shorten the long run to ~10 km or move it to Monday."),
     ("Volume", VOLUME_TEXT),
     ("STRENGTH", None),
     ("Why it changes", "You are already strong and explosive (80 cm single-leg box jump). The gym now serves running economy, durability and race surges: heavy + power in base/build, then 1 short power session a week to keep it while the endurance load rises."),
     ("Rules", "Heavy legs on the same day as hard running (Tue) so easy days stay easy. Never to failure. No heavy lower body within 48 h of a race. Drop to 1 light session in calmer weeks."),
     ("TESTS AND RACES", None),
-    ("Tests", "Blocks 1, 4, 7 (calmer week): 5 km run TT, swim CSS 400/200, bike FTP 20 min. Update the Zones sheet after each test."),
-    ("Races (placeholders)", "Sprint B race end of April, Olympic B race mid-June, A race 1 end of June, optional sprint mid-July, A race 2 (selection) early September. Replace with the real Guatemalan calendar and re-run the generator."),
+    ("Tests", "Intro week 2 (late Nov), end of base (mid Feb), end of build (mid Apr), in easy weeks: 5 km run TT, swim CSS 400/200, bike FTP 20 min. Update the Zones sheet after each test."),
+    ("Races (placeholders)", "Sprint B race 16 May, Olympic B race 13 Jun, A race 1 11 Jul, optional sprint 8 Aug, A race 2 (selection) 5 Sep. Replace with the real Guatemalan calendar and re-run the generator."),
     ("ADAPT", None),
     ("When life happens", "Move sessions in the app; never stack two hard days. Missed a key session? Skip it, don't squeeze it in. Sick or very tired: turn the week into a calmer week."),
     ("Altitude / heat", "If you train at altitude (e.g. Guatemala City ~1,500 m) run paces will feel ~2–4% harder: use effort/HR on threshold days and save exact paces for sea-level races."),

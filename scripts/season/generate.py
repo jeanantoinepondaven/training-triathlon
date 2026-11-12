@@ -1,5 +1,5 @@
 """
-Season generator: Nov 2026 -> Sep 2027, 14 blocks of 3 weeks (2 load + 1 recovery).
+Season generator: 16 Nov 2026 -> 5 Sep 2027. A 2-week intro, then 10 blocks of 4 weeks (3 load + 1 easy).
 
 Writes one cycle YAML per block (importable in the app) and a JSON summary used by the Excel builder.
 Edit the SETTINGS section and re-run:  python3 scripts/season/generate.py
@@ -17,40 +17,41 @@ ATHLETE = "Jean-Antoine"
 
 # Run: current 10 km and target 10 km (assumed 10 km; see README)
 RUN_NOW_10K = 36 * 60 + 45             # 36:45
-RUN_GOAL_10K = 35 * 60                 # 35:00, reached by block 11 (late June)
-GOAL_BLOCK = 11
+RUN_GOAL_10K = 35 * 60                 # 35:00, reached by Peak 1 (early July)
 
 # Race / test calendar: (block, week, weekday 0=Mon, kind, title). Move to real dates and re-run.
 EVENTS = [
-    (1, 3, 5, "test", "Baseline tests"),
-    (4, 3, 5, "test", "Tests: end of base"),
-    (7, 3, 5, "test", "Tests: mid build"),
-    (8, 3, 6, "race_b_sprint", "B race: sprint (placeholder date)"),
-    (10, 3, 6, "race_b_olympic", "B race: Olympic (placeholder date)"),
-    (11, 3, 6, "race_a", "A race 1: Olympic / national ranking (placeholder date)"),
-    (12, 3, 6, "race_b_sprint", "Race: sprint, draft-legal (optional, placeholder)"),
-    (14, 3, 6, "race_a", "A race 2: national selection (placeholder date)"),
+    (1, 2, 5, "test", "Baseline tests"),
+    (4, 4, 5, "test", "Tests: end of base"),
+    (6, 4, 5, "test", "Tests: end of build"),
+    (7, 4, 6, "race_b_sprint", "B race: sprint (placeholder date)"),
+    (8, 4, 6, "race_b_olympic", "B race: Olympic (placeholder date)"),
+    (9, 4, 6, "race_a", "A race 1: Olympic / national ranking (placeholder date)"),
+    (10, 4, 6, "race_b_sprint", "Race: sprint, draft-legal (optional, placeholder)"),
+    (11, 4, 6, "race_a", "A race 2: national selection (placeholder date)"),
 ]
 
-# (number, name, phase, volume factor, goal)
+# (number, name, phase, volume factor, goal, weeks). Blocks are 3 load weeks + 1 easy week,
+# except the 2-week intro (load + easy/tests) and the peaks (load, load+, sharpen, race).
 BLOCKS = [
-    (1, "Base 1", "base", 0.85, "Rebuild the routine, swim technique, baseline tests"),
-    (2, "Base 2", "base", 0.92, "Aerobic volume, max strength foundation"),
-    (3, "Base 3", "base", 1.00, "Aerobic volume, hills and tempo"),
-    (4, "Base 4", "base", 1.06, "Biggest base load, end-of-base tests"),
-    (5, "Build 1", "build", 0.98, "Threshold in all three sports, strength to power"),
-    (6, "Build 2", "build", 1.03, "Longer threshold, first bricks"),
-    (7, "Build 3", "build", 1.08, "Peak build volume, mid-season tests"),
-    (8, "Build 4", "build", 1.06, "Race-pace introduction, B sprint race"),
-    (9, "Specific 1", "specific", 1.00, "Race pace + draft-legal surges, power maintenance"),
-    (10, "Specific 2", "specific", 1.05, "Race simulations, B Olympic race"),
-    (11, "Peak 1", "peak", 1.00, "Sharpen and taper: A race 1"),
-    (12, "Race block", "specific", 0.95, "Hold fitness between races, sprint speed"),
-    (13, "Rebuild", "specific", 1.02, "Last big specific block"),
-    (14, "Peak 2", "peak", 0.98, "Sharpen and taper: A race 2 (selection)"),
+    (1, "Intro", "base", 0.82, "Ease in, swim technique, baseline tests", 2),
+    (2, "Base 1", "base", 0.88, "Aerobic volume, max strength, winter routine", 4),
+    (3, "Base 2", "base", 0.95, "Aerobic volume, hills and tempo", 4),
+    (4, "Base 3", "base", 1.00, "Biggest base load, end-of-base tests", 4),
+    (5, "Build 1", "build", 0.98, "Threshold in all three sports, strength to power", 4),
+    (6, "Build 2", "build", 1.04, "Back on the road, longer threshold, first bricks, tests", 4),
+    (7, "Build 3", "build", 1.06, "Peak build volume, race pace begins, B sprint race", 4),
+    (8, "Specific 1", "specific", 1.00, "Race pace, draft-legal surges, B Olympic race", 4),
+    (9, "Peak 1", "peak", 1.00, "Sharpen and taper: A race 1", 4),
+    (10, "Race block", "specific", 0.98, "Hold fitness between races, sprint speed", 4),
+    (11, "Peak 2", "peak", 1.00, "Sharpen and taper: A race 2 (selection)", 4),
 ]
-LOAD2 = 1.08     # week 2 = week 1 x 1.08
-RECOVERY = 0.62  # recovery week ~ 60-65 % of week 2
+GOAL_BLOCK = 9           # 10 km goal pace reached by Peak 1
+LOAD_STEPS = {1: 1.00, 2: 1.06, 3: 1.11}  # load weeks 1-3 of a block
+EASY = 1.25              # easy week ~ 55-65 % of load week 3
+
+# Winter: less riding (2 indoor sessions), a 3rd gym session, football on Wednesdays, snowboard on Saturdays.
+WINTER = ((12, 1), (3, 14))   # (month, day) from 1 Dec to 14 Mar
 # ==============================================================================
 
 DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
@@ -328,8 +329,86 @@ def gym(w, day, phase, kind):
     w.add(day, {"title": title, "description": desc, "exercises": exercises}, "gym", mins, 0, 0)
 
 
+GYM[("winter", "C")] = (
+    "Gym C: circuit (strength-endurance)",
+    "Your circuit style: 4 rounds of 4, 2 min rest between rounds, steady and high quality. Then 3 exercises × 3 sets.",
+    [ex("Kettlebell swing", 4, "15", "24 kg", "2min", "circuit A"),
+     ex("Walking lunge", 4, "10/leg", "+16 kg", None, "circuit A"),
+     ex("Box jump + step down", 4, "6", "60 cm", None, "circuit A · two-leg, soft landing"),
+     ex("Row erg", 4, "250m", "hard", None, "circuit A"),
+     ex("Hanging knee raise", 3, "10", None, "60s", "block B"),
+     ex("Single-leg glute bridge", 3, "12/leg", None, None, "block B"),
+     ex("Farmer carry", 3, "40m", "heavy", None, "block B")])
+
+
+def spring_ramp(day):
+    """Back on the road after winter: rides grow over 4 weeks (70% -> 100%)."""
+    end = dt.date(day.year, *WINTER[1])
+    weeks = (day - end).days // 7
+    return 0.7 + 0.1 * weeks if 0 <= weeks < 3 else 1.0
+
+
+def is_winter(day):
+    (m1, d1), (m2, d2) = WINTER
+    md = (day.month, day.day)
+    return md >= (m1, d1) or md <= (m2, d2)
+
+
+def football(w, day, easy=False):
+    w.add(day, {"title": "Football (counts as run)", "duration": "1h00", "distance": "6.5km",
+                "target": "intermittent: sprints, changes of direction" + (" · play at 80%, no all-out sprints" if easy else ""),
+                "description": "Replaces the easy run this week. Ankles: warm up properly. Log distance and HR if your watch tracks it."},
+          "run", 60, 6.5, 8 if easy else 18)
+
+
+def snowboard(w, day, f):
+    w.add(day, {"title": "Snowboard day (optional)", "sport": "other",
+                "description": "Cross-training: legs, balance, core. Not aerobic triathlon work, and the eccentric load tires the legs: "
+                               f"keep Sunday's long run easy. No snow this week? Ride indoor {dur(r5(90 * f))} Z2 with 3 × 10 min tempo instead."},
+          "xtrain", 180, 0, 0)
+
+
 # ----------------------------------------------------------------------------- weeks
-def load_week(phase, f, idx, z, sharpen=False):
+def winter_load_week(phase, f, idx, z):
+    """Winter layout: Mon swim + Gym C · Tue run quality + Gym A · Wed swim + football ·
+    Thu indoor bike quality + Gym B · Fri swim + easy run · Sat snowboard (or indoor ride) · Sun long run."""
+    w = Week()
+    swim_technique(w, "mon", f) if phase == "base" else swim_endurance(w, "mon", f)
+    gym(w, "mon", "winter", "C")
+    run_quality(w, "tue", phase, f, idx, z)
+    gym(w, "tue", phase, "A")
+    swim_css(w, "wed", f, phase)
+    football(w, "wed")
+    bike_quality(w, "thu", phase, f, idx)
+    title, steps = w.sessions[-1][1]["title"], w.sessions[-1][1]["steps"]
+    w.sessions[-1][1]["title"] = title.replace("Bike:", "Indoor bike:")
+    gym(w, "thu", phase, "B")
+    swim_endurance(w, "fri", f) if phase == "base" else swim_technique(w, "fri", f)
+    bike_endurance(w, "fri", r5(65 * f), "Indoor trainer. Z2 with 5 × 1 min high cadence (110+ rpm). Keeps the bike legs through winter.")
+    w.sessions[-1][1]["title"] = "Indoor bike endurance"
+    snowboard(w, "sat", f)
+    long_run(w, "sun", min(rkm(15 * f), 20), z, finish=(phase != "base" and idx % 2 == 1))
+    return w
+
+
+def winter_easy_week(z, f, event=None):
+    w = Week()
+    swim_easy(w, "mon", r100(2200 * f))
+    run_easy(w, "tue", rkm(7 * f), z)
+    if not event:
+        football(w, "wed", easy=True)
+    bike_endurance(w, "thu", r5(60 * f), "Indoor, easy, high cadence.")
+    gym(w, "thu", "recovery", "A")
+    swim_technique(w, "fri", 0.7 * f)
+    if event:
+        add_tests(w, z)
+    else:
+        snowboard(w, "sat", f)
+        long_run(w, "sun", rkm(11 * f), z)
+    return w
+
+
+def load_week(phase, f, idx, z, sharpen=False, ride_scale=1.0):
     """Hard/easy layout: Mon easy · Tue run quality + heavy gym · Wed swim + bike quality ·
     Thu easy run + power gym · Fri swim · Sat long ride (+ brick) · Sun long run."""
     w = Week()
@@ -351,13 +430,30 @@ def load_week(phase, f, idx, z, sharpen=False):
                       "description": "Open water or with a training partner when possible: practise swimming on someone's feet and around buoys."},
               "swim", dist / 100 * 2.0, dist / 1000, 8)
     (swim_technique if p != "base" else swim_endurance)(w, "fri", f)
-    ride = r5({"base": 150, "build": 170, "specific": 155}[p] * f)
+    ride = r5({"base": 150, "build": 170, "specific": 155}[p] * f * ride_scale)
     brick = {"base": 0, "build": rkm(3 * f), "specific": rkm(5 * min(f, 1.1))}[p]
     long_ride(w, "sat", ride, p, brick, z)
     lr = rkm({"base": 15, "build": 17, "specific": 16}[p] * f)
     long_run(w, "sun", min(lr, 22), z, finish=(p != "base" and idx % 2 == 1))
-    bike_endurance(w, "mon", r5({"base": 50, "build": 60, "specific": 60}[p] * f), "Easy spin after the swim: Z1–Z2, high cadence, legs loose for Tuesday.")
+    bike_endurance(w, "mon", r5({"base": 50, "build": 60, "specific": 60}[p] * f * ride_scale), "Easy spin after the swim: Z1–Z2, high cadence, legs loose for Tuesday.")
     return w
+
+
+def add_tests(w, z):
+    """5 km run TT on Saturday; swim CSS and bike FTP tests on Sunday."""
+    w.add("sat", {"title": "Test: 5 km run time trial", "distance": "5km", "target": "all-out, even pacing, track or flat loop",
+                  "description": "Warm up 15 min + 3 strides. Record time and avg HR: it updates your run paces."},
+          "run", 45, 8.0, 20)
+    w.add("sun", {"title": "Test: swim CSS 400 + 200", "steps": [
+        {"label": "Warm-up", "distance": "400m"}, {"label": "400 m time trial", "distance": "400m", "target": "all-out"},
+        {"label": "Easy", "distance": "200m"}, {"label": "200 m time trial", "distance": "200m", "target": "all-out"},
+        {"label": "Cool-down", "distance": "300m"}], "description": "CSS = (400 time − 200 time) / 2 per 100 m."},
+          "swim", 40, 1.5, 8)
+    w.add("sun", {"title": "Test: bike FTP 20 min", "steps": [
+        {"label": "Warm-up", "duration": "20min", "target": "incl. 3 × 1 min fast"},
+        {"label": "20 min test", "duration": "20min", "target": "best sustainable effort"},
+        {"label": "Cool-down", "duration": "15min"}], "description": "FTP ≈ 95% of the 20-min average power. Indoor trainer is fine."},
+          "bike", 55, 0, 20)
 
 
 def recovery_week(phase, z, event=None, f=1.0):
@@ -370,19 +466,7 @@ def recovery_week(phase, z, event=None, f=1.0):
     swim_technique(w, "fri", 0.7 * f)
     if event and event[3] == "test":
         run_easy(w, "thu", rkm(6 * f), z, strides=False)
-        w.add("sat", {"title": "Test: 5 km run time trial", "distance": "5km", "target": "all-out, even pacing, track or flat loop",
-                      "description": "Warm up 15 min + 3 strides. Record time and avg HR: it updates your run paces."},
-              "run", 45, 8.0, 20)
-        w.add("sun", {"title": "Test: swim CSS 400 + 200", "steps": [
-            {"label": "Warm-up", "distance": "400m"}, {"label": "400 m time trial", "distance": "400m", "target": "all-out"},
-            {"label": "Easy", "distance": "200m"}, {"label": "200 m time trial", "distance": "200m", "target": "all-out"},
-            {"label": "Cool-down", "distance": "300m"}], "description": "CSS = (400 time − 200 time) / 2 per 100 m."},
-              "swim", 40, 1.5, 8)
-        w.add("sun", {"title": "Test: bike FTP 20 min", "steps": [
-            {"label": "Warm-up", "duration": "20min", "target": "incl. 3 × 1 min fast"},
-            {"label": "20 min test", "duration": "20min", "target": "best sustainable effort"},
-            {"label": "Cool-down", "duration": "15min"}], "description": "FTP ≈ 95% of the 20-min average power. Indoor trainer is fine."},
-              "bike", 55, 0, 20)
+        add_tests(w, z)
     else:
         bike_endurance(w, "sat", r5(120 * f), "Z2 with 3 × 3 min @ 95% FTP to stay sharp.")
         long_run(w, "sun", rkm(12 * f), z)
@@ -422,27 +506,36 @@ def b_race_recovery_week(z, event):
 def main():
     os.makedirs(OUT, exist_ok=True)
     summary = []
-    for (n, name, phase, factor, goal) in BLOCKS:
-        start = START + dt.timedelta(weeks=3 * (n - 1))
+    week_no = 0
+    start = START
+    for (n, name, phase, factor, goal, nweeks) in BLOCKS:
         z = run_zones(n)
         weeks = []
         ev = {(e[0], e[1]): e for e in EVENTS}
-        for wk in (1, 2, 3):
+        for wk in range(1, nweeks + 1):
             event = ev.get((n, wk))
-            idx = (n - 1) * 2 + (wk - 1)
-            if wk == 3:
-                if phase == "peak":
-                    w = race_week(z, event)
-                elif event and event[3].startswith("race"):
+            mon = start + dt.timedelta(weeks=wk - 1)
+            winter = is_winter(mon)
+            idx = week_no
+            week_no += 1
+            last = wk == nweeks
+            if last and phase == "peak":
+                w, kind = race_week(z, event), "Race"
+            elif last:
+                if event and event[3].startswith("race"):
                     w = b_race_recovery_week(z, event)
+                elif winter:
+                    w = winter_easy_week(z, factor * EASY, event)
                 else:
-                    w = recovery_week(phase, z, event, f=factor * 1.15)
-                kind = "Race" if phase == "peak" else "Recovery"
+                    w = recovery_week(phase, z, event, f=factor * EASY)
+                kind = "Easy"
+            elif phase == "peak" and wk == 3:
+                w, kind = load_week(phase, factor, idx, z, sharpen=True), "Sharpen"
             else:
-                f = factor * (LOAD2 if wk == 2 else 1.0)
-                w = load_week(phase, f, idx, z, sharpen=(phase == "peak" and wk == 2))
-                kind = "Sharpen" if (phase == "peak" and wk == 2) else ("Load" if wk == 1 else "Load+")
-            weeks.append((wk, kind, w, event))
+                f = factor * LOAD_STEPS[wk]
+                w = winter_load_week(phase, f, idx, z) if winter else load_week(phase, f, idx, z, ride_scale=spring_ramp(mon))
+                kind = ["Load", "Load+", "Load++"][wk - 1]
+            weeks.append((wk, kind, w, event, mon, winter))
 
         doc = {
             "name": f"{n:02d} · {name}",
@@ -450,10 +543,9 @@ def main():
             "goal": goal,
             "weeks": [],
         }
-        for wk, kind, w, event in weeks:
+        for wk, kind, w, event, mon, winter in weeks:
             order = sorted(w.sessions, key=lambda s: DAYS.index(s[0]))
-            doc["weeks"].append({"week": wk, "focus": kind, "sessions": [s for _, s, _ in order]})
-            mon = start + dt.timedelta(weeks=wk - 1)
+            doc["weeks"].append({"week": wk, "focus": kind + (" · winter" if winter else ""), "sessions": [s for _, s, _ in order]})
             m = [x for _, _, x in w.sessions]
             summary.append({
                 "block": n, "block_name": name, "phase": phase.capitalize(), "week_in_block": wk, "type": kind,
@@ -466,22 +558,25 @@ def main():
                 "gym_n": sum(1 for x in m if x["sport"] == "gym"),
                 "gym_h": round(sum(x["min"] for x in m if x["sport"] == "gym") / 60, 2),
                 "other_h": round(sum(x["min"] for x in m if x["sport"] == "other") / 60, 2),
+                "xtrain_h": round(sum(x["min"] for x in m if x["sport"] == "xtrain") / 60, 2),
+                "winter": winter,
                 "hard_h": round(sum(x["hard"] for x in m) / 60, 2),
                 "pace_10k": mmss(z["p"]),
                 "event": event[4] if event else "",
             })
         path = os.path.join(OUT, f"block-{n:02d}-{name.lower().replace(' ', '-')}.yaml")
         with open(path, "w") as fh:
-            fh.write(f"# Season 2026-27 · block {n} of {len(BLOCKS)} · {name} ({phase})\n# Generated by scripts/season/generate.py — edit the generator, not this file.\n")
+            fh.write(f"# Season 2026-27 · block {n} of {len(BLOCKS)} · {name} ({phase}, {nweeks} weeks)\n# Generated by scripts/season/generate.py — edit the generator, not this file.\n")
             yaml.dump(doc, fh, Dumper=NoAliasDumper, sort_keys=False, allow_unicode=True, width=120)
+        start = start + dt.timedelta(weeks=nweeks)
     with open(os.path.join(OUT, "season-summary.json"), "w") as fh:
-        json.dump({"weeks": summary, "blocks": [dict(n=b[0], name=b[1], phase=b[2], factor=b[3], goal=b[4]) for b in BLOCKS],
+        json.dump({"weeks": summary, "blocks": [dict(n=b[0], name=b[1], phase=b[2], factor=b[3], goal=b[4], weeks=b[5]) for b in BLOCKS],
                    "zones": {n: run_zones(n) for n, *_ in BLOCKS}, "start": START.isoformat(),
                    "run_now": mmss(RUN_NOW_10K), "run_goal": mmss(RUN_GOAL_10K)}, fh, indent=1, ensure_ascii=False)
     print(f"wrote {len(BLOCKS)} blocks, {len(summary)} weeks to {os.path.normpath(OUT)}")
     for s in summary:
         tot = s["swim_h"] + s["bike_h"] + s["run_h"] + s["gym_h"] + s["other_h"]
-        print(f"B{s['block']:02d}W{s['week_in_block']} {s['monday']} {s['type']:<8} tot {tot:5.1f}h swim {s['swim_km']:4.1f}km bike {s['bike_h']:4.1f}h run {s['run_km']:5.1f}km gym {s['gym_n']} hard {s['hard_h']:.1f}h {s['event']}")
+        print(f"B{s['block']:02d}W{s['week_in_block']} {s['monday']} {s['type']:<8}{'*' if s['winter'] else ' '} tot {tot:5.1f}h xt {s['xtrain_h']:.0f}h swim {s['swim_km']:4.1f}km bike {s['bike_h']:4.1f}h run {s['run_km']:5.1f}km gym {s['gym_n']} hard {s['hard_h']:.1f}h {s['event']}")
 
 
 if __name__ == "__main__":
