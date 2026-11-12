@@ -4,6 +4,8 @@ import { formatDistance, formatDuration, formatPace } from "./units";
 
 type W = Pick<Workout, "plan" | "log" | "sport" | "status">;
 
+const EASY = /warm|cool|easy|recover|drill|jog|build/i;
+
 /** Rough minutes for a session, used for the day strip's load bars. */
 export function estimateMinutes(w: W): number {
   const src = w.status === "done" && w.log?.kind === "endurance" ? w.log : w.plan.kind === "endurance" ? w.plan : null;
@@ -31,7 +33,9 @@ export function targetLine(w: W): string {
     return `${first.name} ${first.sets} × ${first.reps}${first.load ? ` @ ${first.load}` : ""} · ${p.exercises.length} ex · ${sets} sets`;
   }
   if (p.kind === "endurance") {
-    const main = p.steps?.find((s) => s.repeat && s.repeat > 1);
+    // The main set = the repeated block with the most work (not the warm-up builds or drills).
+    const size = (s: EnduranceStep) => (s.repeat ?? 1) * ((s.distanceM ?? 0) / 1000 * 5 + (s.durationS ?? 0) / 60);
+    const main = p.steps?.filter((s) => s.repeat && s.repeat > 1 && !EASY.test(s.label ?? "")).sort((a, b) => size(b) - size(a))[0];
     const core = main ? `${main.repeat} × ${stepAmount(main)}${main.target ? ` @ ${main.target}` : ""}` : null;
     return [core ?? [formatDistance(p.distanceM), formatDuration(p.durationS)].filter(Boolean).join(" · "), !main ? p.target : null]
       .filter(Boolean)
@@ -58,7 +62,6 @@ export function heroStat(w: W): { value: string; unit: string } | null {
   return null;
 }
 
-const EASY = /warm|cool|easy|recover|drill|jog/i;
 
 /** Interval steps (endurance) or exercises (gym), for the hero card. */
 export function stepsFor(w: W): { text: string; note?: string; easy?: boolean }[] {
@@ -102,4 +105,43 @@ export function planSummary(w: Pick<Workout, "plan">): string {
   }
   if (p.kind === "endurance") return [formatDistance(p.distanceM), formatDuration(p.durationS), p.target].filter(Boolean).join(" · ");
   return "";
+}
+
+/** Interval steps in the design system's shape: reps · what · target, work blocks highlighted. */
+export function higSteps(w: W): { reps?: string; what: string; target?: string; kind?: "work" }[] {
+  const p = w.plan;
+  if (p.kind !== "endurance" || !p.steps?.length) return [];
+  return p.steps.map((s) => {
+    const amount = [formatDistance(s.distanceM), formatDuration(s.durationS)].filter(Boolean).join(" / ");
+    const work = (s.repeat ?? 1) > 1 || !EASY.test(s.label ?? "");
+    return {
+      reps: s.repeat && s.repeat > 1 ? `${s.repeat} ×` : amount,
+      what: s.repeat && s.repeat > 1 ? `${amount}${s.label ? ` · ${s.label}` : ""}` : s.label ?? "",
+      target: s.target,
+      kind: work && !/warm|cool/i.test(s.label ?? "") ? "work" : undefined,
+    };
+  });
+}
+
+/** Short tag once logged, e.g. "8.3 km · 5:34 /km" or "12/12 sets". */
+export function loggedTag(w: W): string {
+  const l = w.log;
+  if (!l || w.status !== "done") return "";
+  if (l.kind === "endurance") return [formatDistance(l.distanceM), formatPace(w.sport, l.distanceM, l.durationS) || formatDuration(l.durationS)].filter(Boolean).join(" · ");
+  const sets = l.exercises.reduce((t, e) => t + e.sets.length, 0);
+  const done = l.exercises.reduce((t, e) => t + e.sets.filter((s) => s.done).length, 0);
+  return `${done || sets}/${sets} sets`;
+}
+
+export function hm(mins: number): string {
+  if (!mins) return "0 min";
+  if (mins < 60) return `${mins} min`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m ? `${h} h ${m}` : `${h} h`;
+}
+
+/** Cycle week focus label without the generator's " · winter" suffix. */
+export function focusLabel(f?: string): string {
+  return (f ?? "").replace(/\s*·\s*winter/i, "").trim();
 }

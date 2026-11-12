@@ -33,11 +33,15 @@ weeks:
     description: 'Easy spin after the swim: Z1–Z2, high cadence, legs loose for Tuesday.'
   - day: tue
     sport: run
-    title: 'Run: hills'
+    title: 'Run: sprints + hills'
     steps:
     - label: Warm-up
       duration: 15min
       target: easy · 4:36–5:06/km + drills
+    - label: Flying sprints
+      repeat: 6
+      distance: 60m
+      target: ~95%, relaxed and tall · walk back 2–3 min
     - label: Hill reps
       repeat: 8
       duration: 1min
@@ -45,6 +49,7 @@ weeks:
     - label: Cool-down
       duration: 10min
       target: easy
+    description: 'Sprints first, while you''re fresh: full recovery, stop if they slow down. Then the main set.'
   - day: tue
     sport: gym
     title: 'Gym A: max strength'

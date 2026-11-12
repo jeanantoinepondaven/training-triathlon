@@ -1,6 +1,5 @@
-import { register } from "@/app/actions/auth";
-import { AuthForm } from "@/components/auth-form";
+import { LoginScreen } from "@/components/login-screen";
 
 export default function RegisterPage() {
-  return <AuthForm mode="register" action={register} />;
+  return <LoginScreen initial="up" />;
 }

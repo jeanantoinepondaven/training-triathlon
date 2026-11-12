@@ -229,29 +229,54 @@ def long_run(w, day, km, z, finish=False):
     w.add(day, s, "run", km * (z["p"] + 68) / 60, km, hard)
 
 
+FLYING = {"label": "Flying sprints", "repeat": 6, "distance": "60m", "target": "~95%, relaxed and tall · walk back 2–3 min"}
+
+
 def run_quality(w, day, phase, f, idx, z):
+    """Tuesday quality run. Track work for an ex-sprinter: short, fast and fully recovered (alactic),
+    never 300-400 m lactic reps. Base: flying sprints before the main set. Build/specific: every other
+    week the session moves to the track (5 km-pace reps + 150s, or a kick session)."""
     wu = [{"label": "Warm-up", "duration": "15min", "target": f"easy · {z['easy']} + drills"}]
     cd = [{"label": "Cool-down", "duration": "10min", "target": "easy"}]
+    desc = None
+    track = phase in ("build", "specific") and idx % 2 == 0
     if phase == "base":
         opts = [
-            ([{"label": "Hill reps", "repeat": 8, "duration": "1min", "target": "uphill 6–8%, strong, jog down"}], 8, 16, "Run: hills"),
-            ([{"label": "Tempo", "repeat": 3, "duration": "10min", "target": f"{z['tempo']}, 2 min jog"}], 30, 34, "Run: tempo"),
-            ([{"label": "Fartlek", "repeat": 10, "duration": "1min", "target": f"{z['thr']}, 1 min easy"}], 10, 20, "Run: fartlek"),
+            ([FLYING, {"label": "Hill reps", "repeat": 8, "duration": "1min", "target": "uphill 6–8%, strong, jog down"}], 10, 30, "Run: sprints + hills"),
+            ([FLYING, {"label": "Tempo", "repeat": 3, "duration": "10min", "target": f"{z['tempo']}, 2 min jog"}], 32, 50, "Run: sprints + tempo"),
+            ([FLYING, {"label": "Fartlek", "repeat": 10, "duration": "1min", "target": f"{z['thr']}, 1 min easy"}], 12, 34, "Run: sprints + fartlek"),
         ]
+        desc = "Sprints first, while you're fresh: full recovery, stop if they slow down. Then the main set."
+    elif phase == "build" and track:
+        opts = [
+            ([{"label": "800 m reps", "repeat": 6, "distance": "800m", "target": f"5 km pace {z['vo2']}, 2 min jog"},
+              {"label": "Fast and relaxed", "repeat": 4, "distance": "150m", "target": "fast, relaxed form · walk back"}], 4.8 * z["p"] / 60 + 2, 4.8 * z["p"] / 60 + 18, "Track: 800s + 150s"),
+            ([{"label": "1000 m reps", "repeat": 5, "distance": "1km", "target": f"5 km pace {z['vo2']}, 2:30 jog"},
+              {"label": "Fast and relaxed", "repeat": 4, "distance": "150m", "target": "fast, relaxed form · walk back"}], 5 * z["p"] / 60 + 2, 5 * z["p"] / 60 + 20, "Track: 1000s + 150s"),
+        ]
+        desc = "On the track the pacing is exact. Flats or light trainers, no spikes."
     elif phase == "build":
         opts = [
             ([{"label": "Threshold", "repeat": 5, "distance": "1km", "target": f"{z['thr']}, 90s jog"}], 5 * z["p"] / 60, 5 * z["p"] / 60 + 6, "Run: threshold km"),
             ([{"label": "Threshold", "repeat": 3, "distance": "2km", "target": f"{z['thr']}, 2 min jog"}], 6 * z["p"] / 60, 6 * z["p"] / 60 + 4, "Run: 3 × 2 km"),
-            ([{"label": "VO2", "repeat": 6, "distance": "800m", "target": f"{z['vo2']}, 2 min jog"}], 4.8 * z["p"] / 60, 4.8 * z["p"] / 60 + 10, "Run: VO2 800s"),
         ]
+    elif track:
+        opts = [
+            ([{"label": "Kick set: 1200 m", "repeat": 3, "distance": "1200m", "target": f"10 km pace {z['r10k']}, straight into the 200"},
+              {"label": "…then 200 m kick", "repeat": 3, "distance": "200m", "target": "~800 m race pace, 3 min jog after each pair"}], 3.6 * z["p"] / 60 + 2, 3.6 * z["p"] / 60 + 15, "Track: kick session"),
+            ([{"label": "400 m reps", "repeat": 10, "distance": "400m", "target": f"3 km pace (~{mmss(z['p'] - 15)}/km), 60s jog"}], 4 * z["p"] / 60 * 0.95, 4 * z["p"] / 60 + 10, "Track: 10 × 400"),
+        ]
+        desc = "Race finish practice: run the 1200 at 10 km pace and go straight into the 200. That's your sprint finish."
     else:
         opts = [
             ([{"label": "Race pace", "repeat": 6, "distance": "1km", "target": f"10 km race pace {z['r10k']}, 75s jog"}], 6 * z["p"] / 60, 6 * z["p"] / 60 + 6, "Run: race-pace km"),
             ([{"label": "Race pace", "repeat": 3, "distance": "3km", "target": f"{z['r10k']}, 2 min jog"}], 9 * z["p"] / 60, 9 * z["p"] / 60 + 4, "Run: 3 × 3 km"),
-            ([{"label": "Speed", "repeat": 8, "distance": "400m", "target": f"{z['vo2']} or faster, 90s jog"}], 3.2 * z["p"] / 60 * 0.97, 3.2 * z["p"] / 60 + 11, "Run: 400s speed"),
         ]
-    main, hard, mins, title = opts[idx % len(opts)]
-    w.add(day, {"title": title, "steps": wu + main + cd}, "run", 25 + mins, round((25 + mins) * 60 / (z["p"] + 40), 1), round(hard))
+    main, hard, mins, title = opts[(idx // 2 if phase != "base" else idx) % len(opts)]
+    s = {"title": title, "steps": wu + main + cd}
+    if desc:
+        s["description"] = desc
+    w.add(day, s, "run", 25 + mins, round((25 + mins) * 60 / (z["p"] + 40), 1), round(hard))
 
 
 # ----------------------------------------------------------------------------- gym (circuit style)

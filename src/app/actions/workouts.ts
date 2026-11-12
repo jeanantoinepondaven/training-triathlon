@@ -107,7 +107,6 @@ export async function logWorkout(id: string, form: FormData) {
     })
     .where(eq(schema.workouts.id, id));
   refresh(id);
-  redirect(`/workout/${id}?saved=1`);
 }
 
 /** Add a one-off session (not from a cycle). */
@@ -142,4 +141,21 @@ export async function deleteWorkout(id: string) {
   await db.delete(schema.workouts).where(eq(schema.workouts.id, id));
   refresh();
   redirect(`/?w=${w.date}`);
+}
+
+/** Add a one-off session from the Add sheet (no redirect; returns the new id). */
+export async function addWorkoutQuick(input: { sport: string; title: string; date: string; target?: string; minutes?: number }) {
+  const user = await requireUser();
+  const sport = input.sport as Sport;
+  if (!isISODate(input.date) || !SPORTS.includes(sport) || !input.title.trim()) throw new Error("Invalid session");
+  const mins = Math.max(5, Math.min(600, Math.round(input.minutes ?? 45)));
+  const plan: WorkoutPlan =
+    sport === "gym" ? { kind: "gym", exercises: [] } : sport === "other" ? { kind: "free" } : { kind: "endurance", durationS: mins * 60, target: input.target?.trim() || undefined };
+  const db = await getDb();
+  const [w] = await db
+    .insert(schema.workouts)
+    .values({ userId: user.id, plannedDate: input.date, date: input.date, position: 99, sport, title: input.title.trim().slice(0, 80), description: sport === "gym" || sport === "other" ? input.target?.trim() || null : null, plan })
+    .returning({ id: schema.workouts.id });
+  refresh();
+  return w.id;
 }

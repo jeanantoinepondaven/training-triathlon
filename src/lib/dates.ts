@@ -47,3 +47,20 @@ export function today(): string {
 export function formatDay(d: string, opts: Intl.DateTimeFormatOptions = { weekday: "short", day: "numeric", month: "short" }): string {
   return new Intl.DateTimeFormat("en-GB", { ...opts, timeZone: "UTC" }).format(toUTC(d));
 }
+
+/** ISO-8601 week number (Monday-based), e.g. 46 for 9–15 Nov 2026. */
+export function isoWeek(d: string): number {
+  const [y, m, day] = d.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, day));
+  const dow = (date.getUTCDay() + 6) % 7;
+  date.setUTCDate(date.getUTCDate() - dow + 3);
+  const firstThu = new Date(Date.UTC(date.getUTCFullYear(), 0, 4));
+  return 1 + Math.round(((date.getTime() - firstThu.getTime()) / 86400000 - 3 + ((firstThu.getUTCDay() + 6) % 7)) / 7);
+}
+
+export function weekRange(monday: string): string {
+  const sun = addDays(monday, 6);
+  const m1 = formatDay(monday, { month: "short" });
+  const m2 = formatDay(sun, { month: "short" });
+  return m1 === m2 ? `${Number(monday.slice(8))}–${Number(sun.slice(8))} ${m2}` : `${formatDay(monday, { day: "numeric", month: "short" })} – ${formatDay(sun, { day: "numeric", month: "short" })}`;
+}

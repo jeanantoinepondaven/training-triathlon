@@ -21,18 +21,19 @@ weeks:
     description: 'Easy spin after the swim: Z1–Z2, high cadence, legs loose for Tuesday.'
   - day: tue
     sport: run
-    title: 'Run: 400s speed'
+    title: 'Track: 10 × 400'
     steps:
     - label: Warm-up
       duration: 15min
       target: easy · 4:26–4:56/km + drills
-    - label: Speed
-      repeat: 8
+    - label: 400 m reps
+      repeat: 10
       distance: 400m
-      target: 3:22–3:25/km or faster, 90s jog
+      target: 3 km pace (~3:16/km), 60s jog
     - label: Cool-down
       duration: 10min
       target: easy
+    description: 'Race finish practice: run the 1200 at 10 km pace and go straight into the 200. That''s your sprint finish.'
   - day: tue
     sport: gym
     title: 'Gym: power maintenance'
@@ -171,15 +172,15 @@ weeks:
     description: 'Easy spin after the swim: Z1–Z2, high cadence, legs loose for Tuesday.'
   - day: tue
     sport: run
-    title: 'Run: race-pace km'
+    title: 'Run: 3 × 3 km'
     steps:
     - label: Warm-up
       duration: 15min
       target: easy · 4:26–4:56/km + drills
     - label: Race pace
-      repeat: 6
-      distance: 1km
-      target: 10 km race pace 3:31/km, 75s jog
+      repeat: 3
+      distance: 3km
+      target: 3:31/km, 2 min jog
     - label: Cool-down
       duration: 10min
       target: easy
@@ -321,18 +322,23 @@ weeks:
     description: 'Easy spin after the swim: Z1–Z2, high cadence, legs loose for Tuesday.'
   - day: tue
     sport: run
-    title: 'Run: 3 × 3 km'
+    title: 'Track: kick session'
     steps:
     - label: Warm-up
       duration: 15min
       target: easy · 4:26–4:56/km + drills
-    - label: Race pace
+    - label: 'Kick set: 1200 m'
       repeat: 3
-      distance: 3km
-      target: 3:31/km, 2 min jog
+      distance: 1200m
+      target: 10 km pace 3:31/km, straight into the 200
+    - label: …then 200 m kick
+      repeat: 3
+      distance: 200m
+      target: ~800 m race pace, 3 min jog after each pair
     - label: Cool-down
       duration: 10min
       target: easy
+    description: 'Race finish practice: run the 1200 at 10 km pace and go straight into the 200. That''s your sprint finish.'
   - day: tue
     sport: gym
     title: 'Gym: power maintenance'

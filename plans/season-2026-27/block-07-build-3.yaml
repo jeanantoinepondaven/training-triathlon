@@ -21,18 +21,23 @@ weeks:
     description: 'Easy spin after the swim: Z1–Z2, high cadence, legs loose for Tuesday.'
   - day: tue
     sport: run
-    title: 'Run: 3 × 2 km'
+    title: 'Track: 1000s + 150s'
     steps:
     - label: Warm-up
       duration: 15min
       target: easy · 4:28–4:58/km + drills
-    - label: Threshold
-      repeat: 3
-      distance: 2km
-      target: 3:38–3:41/km, 2 min jog
+    - label: 1000 m reps
+      repeat: 5
+      distance: 1km
+      target: 5 km pace 3:24–3:27/km, 2:30 jog
+    - label: Fast and relaxed
+      repeat: 4
+      distance: 150m
+      target: fast, relaxed form · walk back
     - label: Cool-down
       duration: 10min
       target: easy
+    description: On the track the pacing is exact. Flats or light trainers, no spikes.
   - day: tue
     sport: gym
     title: 'Gym A: strength → power (contrast)'
@@ -202,15 +207,15 @@ weeks:
     description: 'Easy spin after the swim: Z1–Z2, high cadence, legs loose for Tuesday.'
   - day: tue
     sport: run
-    title: 'Run: VO2 800s'
+    title: 'Run: 3 × 2 km'
     steps:
     - label: Warm-up
       duration: 15min
       target: easy · 4:28–4:58/km + drills
-    - label: VO2
-      repeat: 6
-      distance: 800m
-      target: 3:24–3:27/km, 2 min jog
+    - label: Threshold
+      repeat: 3
+      distance: 2km
+      target: 3:38–3:41/km, 2 min jog
     - label: Cool-down
       duration: 10min
       target: easy
@@ -383,18 +388,23 @@ weeks:
     description: 'Easy spin after the swim: Z1–Z2, high cadence, legs loose for Tuesday.'
   - day: tue
     sport: run
-    title: 'Run: threshold km'
+    title: 'Track: 800s + 150s'
     steps:
     - label: Warm-up
       duration: 15min
       target: easy · 4:28–4:58/km + drills
-    - label: Threshold
-      repeat: 5
-      distance: 1km
-      target: 3:38–3:41/km, 90s jog
+    - label: 800 m reps
+      repeat: 6
+      distance: 800m
+      target: 5 km pace 3:24–3:27/km, 2 min jog
+    - label: Fast and relaxed
+      repeat: 4
+      distance: 150m
+      target: fast, relaxed form · walk back
     - label: Cool-down
       duration: 10min
       target: easy
+    description: On the track the pacing is exact. Flats or light trainers, no spikes.
   - day: tue
     sport: gym
     title: 'Gym A: strength → power (contrast)'

@@ -1,16 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Martian_Mono, Unbounded } from "next/font/google";
+import { Inter } from "next/font/google";
 import { RegisterSW } from "@/components/register-sw";
 import "./globals.css";
 
-// Tandem type: Unbounded (display), Archivo (UI text), Martian Mono (numbers).
-const unbounded = Unbounded({ variable: "--font-unbounded", subsets: ["latin"], weight: "variable" });
-const archivo = Archivo({ variable: "--font-archivo", subsets: ["latin"], axes: ["wdth"] });
-const martian = Martian_Mono({ variable: "--font-martian", subsets: ["latin"], weight: "variable" });
+// SF Pro comes from the system on Apple devices; Inter stands in elsewhere (design system: Typography).
+const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Tandem",
-  description: "Our training plans, cycles and progress.",
+  description: "Training for two: plans, weeks and progress.",
   appleWebApp: { capable: true, title: "Tandem", statusBarStyle: "default" },
   icons: { icon: "/icon-192.png", apple: "/apple-touch-icon.png" },
 };
@@ -20,15 +18,21 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f2f3ef" },
-    { media: "(prefers-color-scheme: dark)", color: "#0c0e10" },
+    { media: "(prefers-color-scheme: light)", color: "#f2f2f7" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
   ],
 };
 
+// Apply a saved Light/Dark choice before paint (set in Cycles → Settings → Appearance).
+const themeScript = `try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}`;
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${unbounded.variable} ${archivo.variable} ${martian.variable}`}>
-      <body className="min-h-dvh">
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body>
         {children}
         <RegisterSW />
       </body>

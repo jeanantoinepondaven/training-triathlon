@@ -68,11 +68,15 @@ weeks:
       notes: block B
   - day: tue
     sport: run
-    title: 'Run: tempo'
+    title: 'Run: sprints + tempo'
     steps:
     - label: Warm-up
       duration: 15min
       target: easy · 4:32–5:02/km + drills
+    - label: Flying sprints
+      repeat: 6
+      distance: 60m
+      target: ~95%, relaxed and tall · walk back 2–3 min
     - label: Tempo
       repeat: 3
       duration: 10min
@@ -80,6 +84,7 @@ weeks:
     - label: Cool-down
       duration: 10min
       target: easy
+    description: 'Sprints first, while you''re fresh: full recovery, stop if they slow down. Then the main set.'
   - day: tue
     sport: gym
     title: 'Gym A: max strength'
@@ -289,11 +294,15 @@ weeks:
       notes: block B
   - day: tue
     sport: run
-    title: 'Run: fartlek'
+    title: 'Run: sprints + fartlek'
     steps:
     - label: Warm-up
       duration: 15min
       target: easy · 4:32–5:02/km + drills
+    - label: Flying sprints
+      repeat: 6
+      distance: 60m
+      target: ~95%, relaxed and tall · walk back 2–3 min
     - label: Fartlek
       repeat: 10
       duration: 1min
@@ -301,6 +310,7 @@ weeks:
     - label: Cool-down
       duration: 10min
       target: easy
+    description: 'Sprints first, while you''re fresh: full recovery, stop if they slow down. Then the main set.'
   - day: tue
     sport: gym
     title: 'Gym A: max strength'
@@ -510,11 +520,15 @@ weeks:
       notes: block B
   - day: tue
     sport: run
-    title: 'Run: hills'
+    title: 'Run: sprints + hills'
     steps:
     - label: Warm-up
       duration: 15min
       target: easy · 4:32–5:02/km + drills
+    - label: Flying sprints
+      repeat: 6
+      distance: 60m
+      target: ~95%, relaxed and tall · walk back 2–3 min
     - label: Hill reps
       repeat: 8
       duration: 1min
@@ -522,6 +536,7 @@ weeks:
     - label: Cool-down
       duration: 10min
       target: easy
+    description: 'Sprints first, while you''re fresh: full recovery, stop if they slow down. Then the main set.'
   - day: tue
     sport: gym
     title: 'Gym A: max strength'
