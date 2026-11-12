@@ -10,7 +10,7 @@ import { ToastSlot, useToast } from "@/components/hig/toast";
 
 export type CycleItem = { id: string; name: string; goal: string | null; start: string; end: string; dates: string; pct: number; weeks: number; focus: string[] };
 
-export function CyclesScreen({ current, currentWeek, currentProgress, upcoming, finished, userName }: { current: CycleItem | null; currentWeek: number; currentProgress: number; upcoming: CycleItem[]; finished: CycleItem[]; userName: string }) {
+export function CyclesScreen({ current, currentWeek, currentProgress, upcoming, finished, userName, garmin }: { current: CycleItem | null; currentWeek: number; currentProgress: number; upcoming: CycleItem[]; finished: CycleItem[]; userName: string; garmin: { connected: boolean; name: string | null } }) {
   const router = useRouter();
   const toast = useToast();
   const [, start] = useTransition();
@@ -98,6 +98,13 @@ export function CyclesScreen({ current, currentWeek, currentProgress, upcoming, 
           Import next cycle
         </Button>
         <ListSection header="Settings">
+          <ListRow
+            href="/settings/garmin"
+            leading={<span className="hig-sporticon sz-s s-other"><Symbol name="applewatch" size={16} weight="semibold" /></span>}
+            title="Garmin"
+            subtitle={garmin.connected ? `Connected via intervals.icu · ${garmin.name ?? ""}` : "Not connected"}
+            chevron
+          />
           <div className="side-theme" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, minHeight: 44, padding: "0 12px 0 16px" }}>
             <span>Appearance</span>
             <SegmentedControl<"auto" | "light" | "dark">

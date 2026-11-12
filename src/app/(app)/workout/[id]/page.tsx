@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { getLastPerformance, getWorkout, getWorkoutsBetween, listUsers } from "@/lib/data";
 import { addDays, mondayOf, today as getToday } from "@/lib/dates";
 import { SessionScreen } from "@/components/session-screen";
+import { intervalsStatus } from "@/lib/intervals";
 
 export default async function WorkoutPage({ params }: PageProps<"/workout/[id]">) {
   const me = await requireUser();
@@ -24,9 +25,10 @@ export default async function WorkoutPage({ params }: PageProps<"/workout/[id]">
       readOnly={!mine}
       ownerName={owner}
       today={getToday()}
-      weekItems={week.map(({ id, date, plannedDate, sport, title, status, plan, log, cycleId }) => ({ id, date, plannedDate, sport, title, status, plan, log, cycleId }))}
+      weekItems={week.map(({ id, date, plannedDate, sport, title, status, plan, log, cycleId, intervalsEventId, intervalsActivityId }) => ({ id, date, plannedDate, sport, title, status, plan, log, cycleId, intervalsEventId, intervalsActivityId }))}
       prev={prev}
       back={`/?w=${w.date}${mine ? "" : `&u=${w.userId}`}`}
+      garmin={mine ? (await intervalsStatus(me.id)).connected : false}
     />
   );
 }

@@ -1,8 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useOptimistic, useRef, useState, useTransition } from "react";
+import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 import { addWorkoutQuick, moveWorkout, setStatus } from "@/app/actions/workouts";
+import { autoSync, sendWeekToWatch, syncNow } from "@/app/actions/intervals";
+import { canSendToWatch } from "@/lib/intervals-format";
 import type { Sport, Workout } from "@/db/schema";
 import { Symbol } from "@/components/hig/symbol";
 import {
@@ -30,7 +32,7 @@ import { ToastSlot, useToast } from "@/components/hig/toast";
 import { estimateMinutes, hm, loggedTag, targetLine } from "@/lib/sport";
 import { addDays, formatDay, mondayOf } from "@/lib/dates";
 
-export type WW = Pick<Workout, "id" | "date" | "plannedDate" | "sport" | "title" | "status" | "plan" | "log" | "cycleId">;
+export type WW = Pick<Workout, "id" | "date" | "plannedDate" | "sport" | "title" | "status" | "plan" | "log" | "cycleId" | "intervalsEventId" | "intervalsActivityId">;
 type Change = { id: string; date?: string; status?: Workout["status"]; add?: WW };
 
 const DN = (d: string) => formatDay(d, { weekday: "short" });
@@ -48,7 +50,9 @@ export function WeekScreen({
   meId,
   cycle,
   monday,
+  garmin,
 }: {
+  garmin: boolean;
   title: string;
   subtitle: string;
   days: string[];
@@ -72,6 +76,51 @@ export function WeekScreen({
   const [sheet, setSheet] = useState<{ name: "move"; id: string } | { name: "add"; date: string } | null>(null);
   const [menu, setMenu] = useState<{ items: MenuItem[]; y: number; label: string } | null>(null);
   const ro = !editable;
+  // Watch → Tandem: pull new Garmin activities when the week opens (at most every 15 min, server-side).
+  useEffect(() => {
+    if (!garmin || !editable) return;
+    let alive = true;
+    autoSync().then((r) => {
+      if (!alive) return;
+      const n = r.matched + r.added;
+      if (n) {
+        toast({ message: `${n} session${n > 1 ? "s" : ""} synced from Garmin`, icon: "applewatch", tone: "done" });
+        router.refresh();
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, [garmin, editable, router, toast]);
+  const sendable = items.filter((s) => canSendToWatch(s) && !s.intervalsEventId && s.status === "planned" && s.date >= today);
+  const watchMenu = (y: number) =>
+    setMenu({
+      y,
+      label: "Watch",
+      items: [
+        {
+          label: sendable.length ? `Send ${sendable.length} session${sendable.length > 1 ? "s" : ""} to watch` : "Week already on the watch",
+          icon: "applewatch",
+          onClick: () =>
+            sendable.length &&
+            start(async () => {
+              const r = await sendWeekToWatch(monday);
+              toast(r.error ? { message: r.error, icon: "exclamationmark.circle" } : { message: `${r.sent} session${r.sent === 1 ? "" : "s"} on your Garmin calendar · sync the watch`, icon: "applewatch", tone: "done" });
+            }),
+        },
+        {
+          label: "Sync from Garmin now",
+          icon: "arrow.triangle.2.circlepath",
+          onClick: () =>
+            start(async () => {
+              const r = await syncNow();
+              const n = r.matched + r.added;
+              toast(r.error ? { message: r.error, icon: "exclamationmark.circle" } : { message: n ? `${n} session${n > 1 ? "s" : ""} synced from Garmin` : "Up to date with Garmin", icon: "applewatch", tone: "done" });
+              router.refresh();
+            }),
+        },
+      ],
+    });
   const q = (w: string) => `/?w=${w}${editable ? "" : `&u=${viewedId}`}`;
 
   const statusOf = (s: WW) => (s.status === "planned" && s.date < today ? "missed" : s.status);
@@ -250,6 +299,7 @@ export function WeekScreen({
             label="Week actions"
             items={[
               { icon: "calendar", label: "Back to this week", href: q(today), hidden: isThisWeek },
+              { icon: "applewatch", label: "Watch", hidden: ro || !garmin, onClick: () => watchMenu(70) },
               { icon: "plus", label: "Add session", hidden: ro, onClick: () => setSheet({ name: "add", date: focus }) },
             ]}
           />
@@ -322,7 +372,7 @@ function SessionRow({ s, status, readOnly, today, onOpen, onToggle }: { s: WW; s
       <div className="hig-session-text">
         <span className="title">{s.title}</span>
         <span className="target">{targetLine(s) || "Open to see the plan"}</span>
-        {(s.date !== s.plannedDate || status === "skipped" || status === "missed" || logged) && (
+        {(s.date !== s.plannedDate || status === "skipped" || status === "missed" || logged || (s.intervalsEventId && s.status === "planned")) && (
           <span className="tags">
             {s.date !== s.plannedDate && (
               <Tag kind="moved" icon="calendar.badge.clock">
@@ -340,6 +390,11 @@ function SessionRow({ s, status, readOnly, today, onOpen, onToggle }: { s: WW; s
               </Tag>
             )}
             {logged && <Tag kind="done">{logged}</Tag>}
+            {s.intervalsEventId && s.status === "planned" && (
+              <Tag kind="skipped" icon="applewatch">
+                On watch
+              </Tag>
+            )}
           </span>
         )}
       </div>

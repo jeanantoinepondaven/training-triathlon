@@ -21,6 +21,13 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   name: text("name").notNull(),
   passwordHash: text("password_hash").notNull(),
+  // intervals.icu bridge to Garmin (API key stored encrypted, never returned to the browser)
+  intervalsAthleteId: text("intervals_athlete_id"),
+  intervalsAthleteName: text("intervals_athlete_name"),
+  intervalsKey: text("intervals_key_enc"),
+  intervalsConnectedAt: timestamp("intervals_connected_at", { withTimezone: true }),
+  intervalsLastSync: timestamp("intervals_last_sync", { withTimezone: true }),
+  intervalsLastError: text("intervals_last_error"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -67,6 +74,11 @@ export const workouts = pgTable(
     feeling: integer("feeling"), // 1-5
     notes: text("notes"),
     completedAt: timestamp("completed_at", { withTimezone: true }),
+    /** Planned workout on the intervals.icu calendar (sent to the watch). */
+    intervalsEventId: text("intervals_event_id"),
+    /** Activity recorded on the watch that filled this session's log. */
+    intervalsActivityId: text("intervals_activity_id"),
+    activityDevice: text("activity_device"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

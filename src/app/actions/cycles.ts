@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
+import { followChange } from "@/lib/intervals";
 import { getDb, schema } from "@/db";
 import { requireUser } from "@/lib/auth";
 import { listUsers } from "@/lib/data";
@@ -64,6 +65,9 @@ export async function importCycle(_: ImportState, form: FormData): Promise<Impor
 export async function deleteCycle(id: string) {
   const user = await requireUser();
   const db = await getDb();
+  // Take the cycle's sessions off the watch before they're deleted.
+  const sent = await db.select().from(schema.workouts).where(and(eq(schema.workouts.cycleId, id), eq(schema.workouts.userId, user.id), isNotNull(schema.workouts.intervalsEventId)));
+  for (const w of sent) await followChange(w, "deleted");
   await db.delete(schema.cycles).where(and(eq(schema.cycles.id, id), eq(schema.cycles.userId, user.id)));
   revalidatePath("/", "layout");
 }

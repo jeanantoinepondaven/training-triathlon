@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { deleteWorkout, logWorkout, moveWorkout, setStatus } from "@/app/actions/workouts";
+import { setOnWatch } from "@/app/actions/intervals";
+import { canSendToWatch } from "@/lib/intervals-format";
 import type { Workout } from "@/db/schema";
 import type { GymPlan, LoggedSet } from "@/lib/plan-types";
 import { Symbol } from "@/components/hig/symbol";
@@ -24,6 +26,7 @@ import {
   StatTile,
   Stepper,
   Tag,
+  Toggle,
 } from "@/components/hig/ui";
 import { ToastSlot, useToast } from "@/components/hig/toast";
 import { MoveSheet, type WW } from "@/components/week-screen";
@@ -80,7 +83,9 @@ export function SessionScreen({
   weekItems,
   prev,
   back,
+  garmin,
 }: {
+  garmin: boolean;
   w: Workout;
   readOnly: boolean;
   ownerName?: string;
@@ -104,6 +109,18 @@ export function SessionScreen({
   const [date, setDate] = useState(w.date);
   const [sheet, setSheet] = useState(false);
   const [menu, setMenu] = useState<{ items: MenuItem[]; y: number } | null>(null);
+  const [onWatch, setOnWatchState] = useState(!!w.intervalsEventId);
+  const [watchBusy, setWatchBusy] = useState(false);
+  const toggleWatch = async (on: boolean) => {
+    setWatchBusy(true);
+    setOnWatchState(on);
+    const r = await setOnWatch(w.id, on);
+    setWatchBusy(false);
+    if (r.error) {
+      setOnWatchState(!on);
+      toast({ message: r.error, icon: "exclamationmark.circle" });
+    } else toast({ message: on ? "On your Garmin calendar · sync the watch" : "Removed from the watch", icon: "applewatch", tone: on ? "done" : undefined });
+  };
   const plan = w.plan;
   const gym = draft.kind === "gym";
   const missed = status === "planned" && date < today;
@@ -284,7 +301,7 @@ export function SessionScreen({
     planView.push(
       <div className="tiles" key="tiles">
         <StatTile label="Distance" value={plan.distanceM ? stat?.unit === "m" ? stat.value : String(+(plan.distanceM / 1000).toFixed(1)) : "–"} unit={plan.distanceM ? (stat?.unit === "m" ? " m" : " km") : undefined} />
-        <StatTile label="Time" value={hm(mins).replace(" min", "")} unit={mins < 60 ? " min" : undefined} />
+        <StatTile label="Time" value={mins >= 60 ? `${Math.floor(mins / 60)}:${String(mins % 60).padStart(2, "0")}` : String(mins)} unit={mins >= 60 ? " h" : " min"} />
         <StatTile label="Zone" value={zone ?? "–"} />
       </div>,
     );
@@ -439,6 +456,7 @@ export function SessionScreen({
         </ListSection>,
       );
     }
+    if (w.intervalsActivityId) logView.push(<Recorded key="rec" device={w.activityDevice} />);
     logView.push(feel);
   } else {
     const unit = w.sport === "swim" ? "m" : "km";
@@ -460,6 +478,7 @@ export function SessionScreen({
         {w.sport !== "other" && <ListRow title={w.sport === "bike" ? "Speed" : "Pace"} trailing={<span className="derived">{dv || "–"}</span>} />}
       </ListSection>,
     );
+    if (w.intervalsActivityId) logView.push(<Recorded key="rec" device={w.activityDevice} />);
     logView.push(feel);
   }
   if (!ro)
@@ -527,6 +546,15 @@ export function SessionScreen({
         {tab === "plan" ? (
           <>
             {statusSec}
+            {!ro && canSendToWatch(w) && status !== "done" && (
+              <ListSection footer={garmin ? (onWatch ? "Moves and skips follow on the watch automatically." : "Sends the steps and targets to your Garmin calendar via intervals.icu.") : undefined}>
+                {garmin ? (
+                  <Toggle label="Send to watch" sub={onWatch ? "On your Garmin calendar" : undefined} checked={onWatch} disabled={watchBusy} onChange={toggleWatch} />
+                ) : (
+                  <ListRow href="/settings/garmin" leading={<Symbol name="applewatch" size={18} weight="semibold" style={{ color: "var(--label-secondary)" }} />} title="Send to watch" subtitle="Connect Garmin first" chevron />
+                )}
+              </ListSection>
+            )}
             {planView}
           </>
         ) : (
@@ -536,5 +564,15 @@ export function SessionScreen({
       {sheet && <MoveSheet s={{ ...w, date }} items={weekItems} today={today} onClose={() => setSheet(false)} onMove={(d, reset) => moveTo(d, reset)} />}
       {menu && <MenuLayer items={menu.items} y={menu.y} label="Session actions" onClose={() => setMenu(null)} />}
     </>
+  );
+}
+
+/** Garmin attribution (required when showing Garmin-sourced data). */
+function Recorded({ device }: { device: string | null }) {
+  return (
+    <div className="ro-note" style={{ padding: "0 4px" }}>
+      <Symbol name="applewatch" size={15} weight="semibold" />
+      Recorded on {device?.startsWith("Garmin") ? device : `Garmin${device ? ` ${device}` : ""}`} · synced via intervals.icu
+    </div>
   );
 }

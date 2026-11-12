@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/db";
 import { requireUser } from "@/lib/auth";
 import { getOwnedWorkout } from "@/lib/data";
+import { followChange } from "@/lib/intervals";
 import { isISODate } from "@/lib/dates";
 import { parseDistance, parseDuration } from "@/lib/units";
 import { SPORTS, STATUSES, type Sport, type Status } from "@/db/schema";
@@ -25,20 +26,22 @@ function refresh(id?: string) {
 
 export async function moveWorkout(id: string, date: string) {
   if (!isISODate(date)) throw new Error("Invalid date");
-  await owned(id);
+  const { w } = await owned(id);
   const db = await getDb();
   await db.update(schema.workouts).set({ date }).where(eq(schema.workouts.id, id));
+  await followChange({ ...w, date }, "moved");
   refresh(id);
 }
 
 export async function setStatus(id: string, status: Status) {
   if (!STATUSES.includes(status)) throw new Error("Invalid status");
-  await owned(id);
+  const { w } = await owned(id);
   const db = await getDb();
   await db
     .update(schema.workouts)
     .set({ status, completedAt: status === "done" ? new Date() : null })
     .where(eq(schema.workouts.id, id));
+  if (status === "skipped") await followChange(w, "skipped");
   refresh(id);
 }
 
@@ -137,6 +140,7 @@ export async function addWorkout(form: FormData) {
 
 export async function deleteWorkout(id: string) {
   const { w } = await owned(id);
+  await followChange(w, "deleted");
   const db = await getDb();
   await db.delete(schema.workouts).where(eq(schema.workouts.id, id));
   refresh();

@@ -3,6 +3,8 @@
 import type { Sport } from "@/db/schema";
 
 const P: Record<string, string> = {
+  "applewatch": "<rect x=\"6.5\" y=\"6\" width=\"11\" height=\"12\" rx=\"3.2\"/><path d=\"M8.8 6l.6-2.5h5.2l.6 2.5M8.8 18l.6 2.5h5.2l.6-2.5\"/><path d=\"M12 9.5V12l1.6 1.2\"/>",
+  "arrow.triangle.2.circlepath": "<path d=\"M4.5 11a7.5 7.5 0 0 1 13-4.6L19.5 8.5M19.5 4.5v4h-4M19.5 13a7.5 7.5 0 0 1-13 4.6L4.5 15.5M4.5 19.5v-4h4\"/>",
   "chevron.left": "<path d=\"M14.5 5.5 8 12l6.5 6.5\"/>",
   "chevron.right": "<path d=\"M9.5 5.5 16 12l-6.5 6.5\"/>",
   "chevron.down": "<path d=\"M5.5 9.5 12 16l6.5-6.5\"/>",

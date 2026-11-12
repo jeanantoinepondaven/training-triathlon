@@ -3,6 +3,7 @@ import { getCycleWeekStats, listCycles } from "@/lib/data";
 import { addDays, diffDays, formatDay, today as getToday } from "@/lib/dates";
 import { focusLabel } from "@/lib/sport";
 import { CyclesScreen, type CycleItem } from "@/components/cycles-screen";
+import { intervalsStatus } from "@/lib/intervals";
 
 export default async function CyclesPage() {
   const me = await requireUser();
@@ -26,6 +27,7 @@ export default async function CyclesPage() {
   const current = items.find((c) => c.start <= t && c.end >= t) ?? null;
   const week = current ? Math.floor(diffDays(t, current.start) / 7) + 1 : 1;
   const ws = current ? stats[current.id]?.[week] : undefined;
+  const g = await intervalsStatus(me.id);
   return (
     <CyclesScreen
       current={current}
@@ -34,6 +36,7 @@ export default async function CyclesPage() {
       upcoming={items.filter((c) => c.start > t).sort((a, b) => a.start.localeCompare(b.start))}
       finished={items.filter((c) => c.end < t)}
       userName={me.name}
+      garmin={{ connected: g.connected, name: g.athleteName }}
     />
   );
 }

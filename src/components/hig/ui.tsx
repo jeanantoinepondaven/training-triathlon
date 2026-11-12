@@ -242,6 +242,20 @@ export function CheckButton({ checked, onChange, readOnly, size, label }: { chec
   );
 }
 
+export function Toggle({ label, sub, checked, onChange, disabled }: { label: React.ReactNode; sub?: React.ReactNode; checked: boolean; onChange?: (v: boolean) => void; disabled?: boolean }) {
+  return (
+    <div className="hig-toggle" style={{ opacity: disabled ? 0.5 : 1, minHeight: sub ? 58 : undefined }}>
+      <span className="hig-row-text">
+        <span className="title">{label}</span>
+        {sub && <span className="sub">{sub}</span>}
+      </span>
+      <button type="button" role="switch" aria-checked={checked} aria-label={typeof label === "string" ? label : undefined} disabled={disabled} className="hig-toggle-track hig-hit" onClick={() => onChange?.(!checked)}>
+        <i />
+      </button>
+    </div>
+  );
+}
+
 const RPE_WORDS = ["", "Very easy", "Easy", "Easy", "Moderate", "Moderate", "Hard", "Hard", "Very hard", "Very hard", "Max"];
 export function RpeSlider({ value, onChange }: { value: number; onChange?: (v: number) => void }) {
   const pct = value ? ((value - 1) / 9) * 100 : 0;

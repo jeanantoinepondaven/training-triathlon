@@ -112,7 +112,12 @@ export function higSteps(w: W): { reps?: string; what: string; target?: string; 
   const p = w.plan;
   if (p.kind !== "endurance" || !p.steps?.length) return [];
   return p.steps.map((s) => {
-    const amount = [formatDistance(s.distanceM), formatDuration(s.durationS)].filter(Boolean).join(" / ");
+    const compact = (sec?: number) => {
+      if (!sec) return "";
+      const m = Math.round(sec / 60);
+      return sec < 60 ? `${sec}″` : m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? String(m % 60).padStart(2, "0") : ""}` : `${m}′`;
+    };
+    const amount = [formatDistance(s.distanceM).replace(" ", " "), compact(s.durationS)].filter(Boolean).join(" / ");
     const work = (s.repeat ?? 1) > 1 || !EASY.test(s.label ?? "");
     return {
       reps: s.repeat && s.repeat > 1 ? `${s.repeat} ×` : amount,

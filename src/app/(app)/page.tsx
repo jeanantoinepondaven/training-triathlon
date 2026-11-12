@@ -3,6 +3,7 @@ import { getCyclesForRange, getWorkoutsBetween, listUsers } from "@/lib/data";
 import { addDays, diffDays, isISODate, isoWeek, mondayOf, today as getToday, weekDates, weekRange } from "@/lib/dates";
 import { focusLabel } from "@/lib/sport";
 import { WeekScreen } from "@/components/week-screen";
+import { intervalsStatus } from "@/lib/intervals";
 
 export default async function WeekPage({ searchParams }: PageProps<"/">) {
   const me = await requireUser();
@@ -31,7 +32,8 @@ export default async function WeekPage({ searchParams }: PageProps<"/">) {
       days={weekDates(monday)}
       today={today}
       monday={monday}
-      workouts={workouts.map(({ id, date, plannedDate, sport, title, status, plan, log, cycleId }) => ({ id, date, plannedDate, sport, title, status, plan, log, cycleId }))}
+      workouts={workouts.map(({ id, date, plannedDate, sport, title, status, plan, log, cycleId, intervalsEventId, intervalsActivityId }) => ({ id, date, plannedDate, sport, title, status, plan, log, cycleId, intervalsEventId, intervalsActivityId }))}
+      garmin={viewed.id === me.id && (await intervalsStatus(me.id)).connected}
       editable={viewed.id === me.id}
       people={people}
       viewedId={viewed.id}
