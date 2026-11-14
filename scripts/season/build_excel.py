@@ -198,7 +198,7 @@ zs["A1"] = "Training zones"; zs["A1"].font = H1
 zs["A2"] = "Yellow cells are yours to fill after each test week (intro, end of base, end of build). Everything else recalculates."; zs["A2"].font = N
 zs["A4"] = "Bike FTP (W)"; zs["A4"].font = B
 zs["B4"] = 280; zs["B4"].font = INPUT; zs["B4"].fill = KEY
-zs["B4"].comment = Comment("Placeholder. Replace with 95% of your 20-min test power (first test: block 1, week 3).", "Plan")
+zs["B4"].comment = Comment("Placeholder. Replace with 95% of your 20-min test power (first test: Sat 12 Dec).", "Plan")
 zs["A5"] = "Swim CSS (sec per 100 m)"; zs["A5"].font = B
 zs["B5"] = 85; zs["B5"].font = INPUT; zs["B5"].fill = KEY
 zs["B5"].comment = Comment("Placeholder (1:25/100 m). CSS = (400 m time − 200 m time) / 2, in seconds.", "Plan")
@@ -248,7 +248,7 @@ gs["A1"] = "Gym plan by phase (your circuit format)"; gs["A1"].font = H1
 gs["A2"] = "Circuit A = 4 rounds of 4 exercises back to back, 2–5 min rest between rounds by intensity. Block B = 3 exercises, 3–4 sets."; gs["A2"].font = N
 header(gs, 4, ["Phase", "Session", "Part", "Exercise", "Sets", "Reps", "Load", "Rest", "Notes"], [10, 30, 10, 26, 6, 10, 18, 8, 40])
 r = 5
-order = [("base", "A"), ("base", "B"), ("winter", "C"), ("build", "A"), ("build", "B"), ("specific", "A"), ("recovery", "A")]
+order = [("return", "A"), ("upper", "B"), ("return", "C"), ("base", "A"), ("base", "B"), ("build", "A"), ("build", "B"), ("specific", "A"), ("recovery", "A"), ("travel", "A")]
 for key in order:
     title, desc, exs = G.GYM[key]
     for e in exs:
@@ -259,14 +259,14 @@ for key in order:
             gs.cell(row=r, column=c, value=v).font = N
         r += 1
     r += 1
-gs.cell(row=r + 1, column=1, value="Frequency: winter (Dec–mid Mar) 3 per load week (C circuit Mon, A heavy Tue, B power Thu); spring build 2; specific & peak 1; easy weeks 1 light; none in race week.").font = B
+gs.cell(row=r + 1, column=1, value="Frequency: winter 3 per load week (A strength Tue night, B upper + core Wed night after football, C power + plyo Fri) + bootcamp Thu noon; build 2 (Tue, Wed); specific & peak 1 (Tue); easy weeks 1 light; none in race week.").font = B
 
 # ------------------------------------------------------------------ Method (first tab)
 ms = wb.create_sheet("Method", 0)
 ms.column_dimensions["A"].width = 28
 ms.column_dimensions["B"].width = 100
 ms["A1"] = "Season 2026–27 · " + G.ATHLETE; ms["A1"].font = H1
-ms["A2"] = f"16 Nov 2026 → 5 Sep 2027 · 2-week intro + 10 blocks of 4 weeks (3 load + 1 easy) · generated {dt.date.today().isoformat()}"; ms["A2"].font = N
+ms["A2"] = f"Start Fri 20 Nov 2026 → 5 Sep 2027 · return-to-run block, holidays (Guatemala 17–30 Dec), then 3 load + 1 easy blocks · generated {dt.date.today().isoformat()}"; ms["A2"].font = N
 LOADW = [w for w in W if w["type"] in ("Load", "Load+")]
 tot_h = lambda w: w["swim_h"] + w["bike_h"] + w["run_h"] + w["gym_h"] + w["other_h"]
 hb = [tot_h(w) for w in LOADW if w["phase"] == "Base"]
@@ -283,15 +283,18 @@ rows = [
     ("Bike", "Hold 38–40 km/h in Olympic and sprint races: in draft-legal racing this means making the front pack and surviving surges, not solo power."),
     ("Swim", "Exit with the front pack: the swim decides which bike group you race in. Biggest lever for top 5."),
     ("STRUCTURE", None),
-    ("3 + 1 blocks", "Every block is 3 load weeks (+6%, +11%) then 1 easy week at ~55–65% of the load. A 2-week intro block (Nov) eases you in and sets the baseline tests. Tests and B races sit in easy weeks, A races in taper weeks."),
-    ("Phases", "Intro (2 wk) · Base (Dec–Feb): aerobic volume, technique, max strength · Build (late Feb–mid May): threshold in all three sports, strength → power · Specific (May–Jun, Jul): race pace, draft-legal surges, bricks · Peak 1 (A race ~11 Jul) · Peak 2 (A race 5 Sep)."),
+    ("Blocks", "Return (20 Nov–13 Dec): ease in, return to running after the knee, bike and swim tests. Holidays (14 Dec–3 Jan): normal until Wed 16, light and flexible in Guatemala 17–30 Dec, back on the 31st. From 4 Jan: 3 load weeks (+6%, +11%) then 1 easy week. Tests and B races sit in easy weeks, A races in taper weeks."),
+    ("Phases", "Return (Nov–Dec) · Holidays · Base 1–3 (Jan–Mar): aerobic volume, technique, max strength · Build 1–2 (late Mar–May): threshold, track, strength → power · Specific (May–Jun): race pace, draft-legal surges · Peak 1 (A race ~11 Jul) · Race block · Peak 2 (A race 5 Sep)."),
     ("Intensity", "Mostly easy (~80%), hard days really hard (~15–22% at threshold or above in build/specific). Hard/easy rhythm: Tue and Sat hard, Wed moderate, Mon/Thu/Fri easy, Sun long and easy."),
-    ("Week layout (spring/summer)", "Mon swim + easy spin · Tue run quality + Gym A · Wed swim CSS + bike quality · Thu easy run + Gym B (or swim speed in specific) · Fri swim · Sat long ride (+ brick) · Sun long run."),
-    ("Week layout (winter)", "Mon swim + Gym C circuit · Tue run quality + Gym A · Wed swim + football at noon · Thu indoor bike quality + Gym B · Fri swim + indoor endurance ride · Sat snowboard (or indoor ride) · Sun long run."),
+    ("Week layout (spring/summer)", "Mon noon jog + evening swim · Tue noon run session (track every other week) + Gym A · Wed noon easy run + Gym B · Thu noon bootcamp + evening swim CSS · Fri bike quality · Sat brick (bike 2–2h40 + run 20–25 min) · Sun long run + optional swim."),
+    ("Week layout (winter)", "Mon noon jog + evening swim · Tue noon run + Gym A (strength) · Wed noon football + Gym B (upper + core) · Thu noon bootcamp + evening swim · Fri Gym C (power + plyo) + optional indoor spin · Sat indoor brick (~1h15 bike + 15 min run) · Sun long run + optional swim."),
     ("WINTER", None),
-    ("Riding", "Dec to mid-March: 2 indoor rides a week (1 quality, 1 endurance, ~2.5 h). The gym takes the freed time (3 sessions). From mid-March rides grow back over 4 weeks (70% → 100%)."),
-    ("Football", "Counts as a run (~6.5 km, intermittent). It replaces the easy run, not the quality run or the long run. Good for speed and agility; warm up the ankles. Easy weeks: play at 80%. Not in test weeks."),
-    ("Snowboard", "Real cross-training (legs, balance, core) but not aerobic triathlon work, and it tires the legs eccentrically. Saturday = snowboard or indoor ride. Keep Sunday's long run easy after a board day; if you ride both days, shorten the long run to ~10 km or move it to Monday."),
+    ("Riding", "Winter: the Saturday indoor brick plus a short Friday spin (~2 h a week); the gym takes the time. From mid-March Friday becomes a bike quality session and the Saturday brick grows (spring ramp 70% → 100%) to ~2h40 bike + 20 min run in build."),
+    ("Football", "Wednesday noon, counts as a run (~6.5 km, intermittent): it is the winter run intensity. Play at 80% through December while the knee comes back. From mid-March it becomes an easy noon run."),
+    ("Snowboard", "Saturday snowboard day? Move the brick to Sunday and drop that week's long run. Board days tire the legs eccentrically: keep the next run easy."),
+    ("KNEE (RUNNER'S KNEE)", None),
+    ("Return to run", "5 km pain-free in early Nov. Runs start at 25–30 min, flat and soft, 3 runs + football; +10% a week at most. Uphill sprints only (kind to the knee) until February; tempo from March; track from Build 1. Rule: pain ≤ 2/10 while running and no worse the next morning → progress; otherwise repeat the week."),
+    ("Rehab in the gym", "Gym A carries Spanish squats, slow step-downs and hip abduction through December; box jumps two-leg and stepping down until the knee is quiet; single-leg jumps from February."),
     ("Volume", VOLUME_TEXT),
     ("TRACK (SPEED)", None),
     ("Why", "Your sprint background (22.7 / 49.6) is a weapon for the race finish, but speed is not your limiter: 3:30/km is ~55% of your 400 m speed. Track work keeps the speed cheaply; the gains come from threshold work."),
@@ -301,8 +304,8 @@ rows = [
     ("Why it changes", "You are already strong and explosive (80 cm single-leg box jump). The gym now serves running economy, durability and race surges: heavy + power in base/build, then 1 short power session a week to keep it while the endurance load rises."),
     ("Rules", "Heavy legs on the same day as hard running (Tue) so easy days stay easy. Never to failure. No heavy lower body within 48 h of a race. Drop to 1 light session in calmer weeks."),
     ("TESTS AND RACES", None),
-    ("Tests", "Intro week 2 (late Nov), end of base (mid Feb), end of build (mid Apr), in easy weeks: 5 km run TT, swim CSS 400/200, bike FTP 20 min. Update the Zones sheet after each test."),
-    ("Races (placeholders)", "Sprint B race 16 May, Olympic B race 13 Jun, A race 1 11 Jul, optional sprint 8 Aug, A race 2 (selection) 5 Sep. Replace with the real Guatemalan calendar and re-run the generator."),
+    ("Tests", "12–13 Dec: bike FTP + swim CSS (no run test yet). 30–31 Jan and 27–28 Mar: 5 km run TT (only if the knee has been pain-free for 4 weeks), swim CSS 400/200, bike FTP 20 min. Update the Zones sheet after each test."),
+    ("Races (placeholders)", "Sprint B race 23 May, Olympic B race 13 Jun, A race 1 11 Jul, optional sprint 8 Aug, A race 2 (selection) 5 Sep. Replace with the real Guatemalan calendar and re-run the generator."),
     ("ADAPT", None),
     ("When life happens", "Move sessions in the app; never stack two hard days. Missed a key session? Skip it, don't squeeze it in. Sick or very tired: turn the week into a calmer week."),
     ("Altitude / heat", "If you train at altitude (e.g. Guatemala City ~1,500 m) run paces will feel ~2–4% harder: use effort/HR on threshold days and save exact paces for sea-level races."),

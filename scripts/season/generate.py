@@ -19,39 +19,52 @@ ATHLETE = "Jean-Antoine"
 RUN_NOW_10K = 36 * 60 + 45             # 36:45
 RUN_GOAL_10K = 35 * 60                 # 35:00, reached by Peak 1 (early July)
 
-# Race / test calendar: (block, week, weekday 0=Mon, kind, title). Move to real dates and re-run.
-EVENTS = [
-    (1, 2, 5, "test", "Baseline tests"),
-    (4, 4, 5, "test", "Tests: end of base"),
-    (6, 4, 5, "test", "Tests: end of build"),
-    (7, 4, 6, "race_b_sprint", "B race: sprint (placeholder date)"),
-    (8, 4, 6, "race_b_olympic", "B race: Olympic (placeholder date)"),
-    (9, 4, 6, "race_a", "A race 1: Olympic / national ranking (placeholder date)"),
-    (10, 4, 6, "race_b_sprint", "Race: sprint, draft-legal (optional, placeholder)"),
-    (11, 4, 6, "race_a", "A race 2: national selection (placeholder date)"),
-]
+# Official start: Friday 20 Nov 2026 (week 1 is Fri–Sun only). Coming back from runner's knee:
+# the first 7 weeks are a return-to-run ramp (see RTR below).
+OFFICIAL_START = dt.date(2026, 11, 20)
+TRAVEL = (dt.date(2026, 12, 17), dt.date(2026, 12, 30))   # Guatemala: lighter, flexible training
+BACK_TO_NORMAL = dt.date(2027, 1, 4)
 
-# (number, name, phase, volume factor, goal, weeks). Blocks are 3 load weeks + 1 easy week,
-# except the 2-week intro (load + easy/tests) and the peaks (load, load+, sharpen, race).
+# Blocks: (number, name, phase, volume factor, goal, week types). Week types:
+# Start (Fri–Sun only) · Load / Load+ / Load++ · Easy · Tests (easy week with tests) · Trip-1/2/3 (Guatemala) ·
+# Sharpen · Race (A race week) · BRace-sprint / BRace-olympic (B race on Sunday, easy week around it).
 BLOCKS = [
-    (1, "Intro", "base", 0.82, "Ease in, swim technique, baseline tests", 2),
-    (2, "Base 1", "base", 0.88, "Aerobic volume, max strength, winter routine", 4),
-    (3, "Base 2", "base", 0.95, "Aerobic volume, hills and tempo", 4),
-    (4, "Base 3", "base", 1.00, "Biggest base load, end-of-base tests", 4),
-    (5, "Build 1", "build", 0.98, "Threshold in all three sports, strength to power", 4),
-    (6, "Build 2", "build", 1.04, "Back on the road, longer threshold, first bricks, tests", 4),
-    (7, "Build 3", "build", 1.06, "Peak build volume, race pace begins, B sprint race", 4),
-    (8, "Specific 1", "specific", 1.00, "Race pace, draft-legal surges, B Olympic race", 4),
-    (9, "Peak 1", "peak", 1.00, "Sharpen and taper: A race 1", 4),
-    (10, "Race block", "specific", 0.98, "Hold fitness between races, sprint speed", 4),
-    (11, "Peak 2", "peak", 1.00, "Sharpen and taper: A race 2 (selection)", 4),
+    (1, "Return", "base", 0.75, "Ease in from the 20th, return to running after the knee, swim technique, bike and swim tests",
+     ["Start", "Load", "Load+", "Tests"]),
+    (2, "Holidays", "base", 0.70, "Keep the routine until the 16th, then light, flexible training in Guatemala; back on the 4th",
+     ["Trip-1", "Trip-2", "Trip-3"]),
+    (3, "Base 1", "base", 0.85, "Aerobic base, run volume back up, max strength, first run test", ["Load", "Load+", "Load++", "Tests"]),
+    (4, "Base 2", "base", 0.93, "Aerobic volume, hills and fartlek, power and plyo", ["Load", "Load+", "Load++", "Easy"]),
+    (5, "Base 3", "base", 1.00, "Biggest base load, tempo, end-of-base tests", ["Load", "Load+", "Load++", "Tests"]),
+    (6, "Build 1", "build", 1.00, "Back on the road, threshold in all three sports, track every other Tuesday", ["Load", "Load+", "Load++", "Easy"]),
+    (7, "Build 2", "build", 1.05, "Peak build volume, longer bricks, race pace begins, B sprint race", ["Load", "Load+", "Load++", "BRace-sprint"]),
+    (8, "Specific", "specific", 1.00, "Race pace, draft-legal surges, B Olympic race", ["Load", "Load+", "BRace-olympic"]),
+    (9, "Peak 1", "peak", 1.00, "Sharpen and taper: A race 1", ["Load", "Load+", "Sharpen", "Race"]),
+    (10, "Race block", "specific", 0.98, "Recover, hold fitness between races, sprint speed", ["Easy", "Load", "Load+", "BRace-sprint"]),
+    (11, "Peak 2", "peak", 1.00, "Sharpen and taper: A race 2 (selection)", ["Load", "Load+", "Sharpen", "Race"]),
 ]
+RACE_TITLES = {
+    7: "B race: sprint (placeholder date)",
+    8: "B race: Olympic (placeholder date)",
+    9: "A race 1: Olympic / national ranking (placeholder date)",
+    10: "Race: sprint, draft-legal (optional, placeholder)",
+    11: "A race 2: national selection (placeholder date)",
+}
 GOAL_BLOCK = 9           # 10 km goal pace reached by Peak 1
-LOAD_STEPS = {1: 1.00, 2: 1.06, 3: 1.11}  # load weeks 1-3 of a block
-EASY = 1.25              # easy week ~ 55-65 % of load week 3
+LOAD_STEPS = {"Load": 1.00, "Load+": 1.06, "Load++": 1.11}
 
-# Winter: less riding (2 indoor sessions), a 3rd gym session, football on Wednesdays, snowboard on Saturdays.
+# Winter: bike indoors, football at noon on Wednesdays, snowboard on Saturdays (optional).
 WINTER = ((12, 1), (3, 14))   # (month, day) from 1 Dec to 14 Mar
+
+# The week (your layout): Mon noon jog + evening swim · Tue noon run + evening gym A · Wed noon football + evening gym B ·
+# Thu noon bootcamp (work) + evening swim · Fri evening gym C (winter) or bike (from spring) · Sat brick (bike + run, ~2 h) ·
+# Sun long run (+ optional swim).
+
+# Return to run (runner's knee, 5 km pain-free in early Nov): minutes per run for the first weeks,
+# by week index from 16 Nov: (Mon noon jog, Tue noon run, run off the bike, Sunday run). 0 = no run.
+RTR = {0: (0, 0, 8, 25), 1: (0, 25, 8, 30), 2: (20, 25, 10, 35), 3: (0, 25, 0, 30)}
+KNEE = ("Knee rule: pain at most 2/10 while running and no worse the next morning → keep progressing. "
+        "More than that → repeat last week's runs. Flat, soft ground, no long downhills, short quick steps.")
 # ==============================================================================
 
 DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
@@ -214,6 +227,14 @@ def long_ride(w, day, mins, phase, brick_km, z):
 
 
 # ----------------------------------------------------------------------------- run
+def jog(w, day, mins, z, title="Noon jog", strides=False, knee=False):
+    s = {"title": title + (" + strides" if strides else ""), "duration": dur(mins),
+         "target": f"easy · {z['easy']}" + (" · finish 4–6 × 20s strides" if strides else "")}
+    if knee:
+        s["description"] = KNEE
+    w.add(day, s, "run", mins, round(mins * 60 / (z["p"] + 70), 1), 2 if strides else 0)
+
+
 def run_easy(w, day, km, z, strides=True):
     s = {"title": "Easy run" + (" + strides" if strides else ""), "distance": f"{km}km",
          "target": f"Z2 · {z['easy']}" + (" · finish 6 × 20s strides" if strides else "")}
@@ -348,22 +369,64 @@ GYM = {
 }
 
 
+GYM[("return", "A")] = (
+    "Gym A: strength (knee-friendly)",
+    "Circuit A: 4 rounds, controlled tempo (3 s down), 2–3 min rest. Block B is knee rehab: do it every time. "
+    "No pain above 2/10 in the knee; box squat depth only to where it's pain-free.",
+    [ex("Box squat", 4, "6", "RPE 7, 3 s down", "2–3min", "circuit A"),
+     ex("Romanian deadlift", 4, "6", "RPE 8", None, "circuit A"),
+     ex("Weighted pull-up", 4, "5", "RPE 8", None, "circuit A"),
+     ex("Pallof press", 4, "10/side", None, None, "circuit A"),
+     ex("Spanish squat (isometric)", 3, "45s", "band behind knees", "60s", "block B · knee rehab"),
+     ex("Slow step-down", 3, "8/leg", "15–20 cm box, 3 s down", None, "block B · knee tracks over 2nd toe"),
+     ex("Side-lying hip abduction", 3, "15/leg", "ankle weight", None, "block B · glute med")])
+GYM[("upper", "B")] = (
+    "Gym B: upper body + core",
+    "After football at noon: legs stay out of it. Circuit A: 4 rounds, 2 min rest. Block B: 3 sets. "
+    "Swim shoulders: face pulls and rows balance the pressing.",
+    [ex("Bench press", 4, "6", "RPE 8", "2min", "circuit A"),
+     ex("Chest-supported row", 4, "8", "RPE 8", None, "circuit A"),
+     ex("Half-kneeling landmine press", 4, "6/side", "RPE 7", None, "circuit A"),
+     ex("Face pull", 4, "15", "light", None, "circuit A"),
+     ex("Hanging knee raise", 3, "10", None, "60s", "block B"),
+     ex("Copenhagen plank", 3, "20s/side", None, None, "block B"),
+     ex("Dead bug", 3, "10/side", None, None, "block B")])
+GYM[("return", "C")] = (
+    "Gym C: power + plyo (knee build-up)",
+    "Low-impact power while the knee settles: two-leg jumps, step down from the box (never jump down). "
+    "Box height goes up only if landings are pain-free. Block B: knee and calf work.",
+    [ex("Hang power clean", 4, "3", "65–70% 1RM", "2–3min", "circuit A"),
+     ex("Two-leg box jump", 4, "5", "40–50 cm, step down", None, "circuit A · soft, quiet landing"),
+     ex("Push press", 4, "5", "RPE 7", None, "circuit A"),
+     ex("Nordic hamstring curl", 4, "4", None, None, "circuit A · slow lowering"),
+     ex("Single-leg calf raise", 3, "12/leg", "+10 kg", "60s", "block B"),
+     ex("Tibialis raise", 3, "15", None, None, "block B"),
+     ex("Single-leg glute bridge", 3, "12/leg", None, None, "block B")])
+GYM[("base", "B")] = (GYM[("base", "B")][0].replace("Gym B", "Gym C"),
+                      GYM[("base", "B")][1] + " Single-leg box jumps only from February and only if the knee has been pain-free; until then two-leg at 60 cm.",
+                      GYM[("base", "B")][2])
+GYM[("travel", "A")] = (
+    "Bodyweight strength (travel)",
+    "20–30 min anywhere: 4 rounds, 1 min rest. Keep the knee rehab going.",
+    [ex("Bulgarian split squat", 4, "10/leg", "bodyweight or backpack", "1min", "circuit A"),
+     ex("Push-up", 4, "15", None, None, "circuit A"),
+     ex("Single-leg hip thrust", 4, "12/leg", None, None, "circuit A"),
+     ex("Plank", 4, "45s", None, None, "circuit A"),
+     ex("Spanish squat (isometric)", 3, "45s", "band, or wall sit", None, "block B · knee"),
+     ex("Slow step-down", 3, "8/leg", "stairs", None, "block B · knee")])
+
+
 def gym(w, day, phase, kind):
     title, desc, exercises = GYM[(phase, kind)]
-    mins = 40 if kind == "B" and phase == "build" else 45 if phase in ("specific", "recovery") else 60
+    mins = 30 if phase == "travel" else 40 if kind == "B" and phase == "build" else 45 if phase in ("specific", "recovery", "upper") else 60
     w.add(day, {"title": title, "description": desc, "exercises": exercises}, "gym", mins, 0, 0)
 
 
-GYM[("winter", "C")] = (
-    "Gym C: circuit (strength-endurance)",
-    "Your circuit style: 4 rounds of 4, 2 min rest between rounds, steady and high quality. Then 3 exercises × 3 sets.",
-    [ex("Kettlebell swing", 4, "15", "24 kg", "2min", "circuit A"),
-     ex("Walking lunge", 4, "10/leg", "+16 kg", None, "circuit A"),
-     ex("Box jump + step down", 4, "6", "60 cm", None, "circuit A · two-leg, soft landing"),
-     ex("Row erg", 4, "250m", "hard", None, "circuit A"),
-     ex("Hanging knee raise", 3, "10", None, "60s", "block B"),
-     ex("Single-leg glute bridge", 3, "12/leg", None, None, "block B"),
-     ex("Farmer carry", 3, "40m", "heavy", None, "block B")])
+def bootcamp(w, day, easy=False):
+    w.add(day, {"title": "Bootcamp (work)", "sport": "other", "duration": "45min",
+                "description": "Counts as conditioning. " + ("Easy week: go at 70%, skip the jumps." if easy else
+                               "Knee first: swap jumps for step-ups or bike sprints if it complains.")},
+          "other", 45, 0, 10 if not easy else 3)
 
 
 def spring_ramp(day):
@@ -380,125 +443,212 @@ def is_winter(day):
 
 
 def football(w, day, easy=False):
-    w.add(day, {"title": "Football (counts as run)", "duration": "1h00", "distance": "6.5km",
+    w.add(day, {"title": "Football at noon (counts as run)", "duration": "1h00", "distance": "6.5km",
                 "target": "intermittent: sprints, changes of direction" + (" · play at 80%, no all-out sprints" if easy else ""),
-                "description": "Replaces the easy run this week. Ankles: warm up properly. Log distance and HR if your watch tracks it."},
+                "description": "Your run intensity of the week in winter. Warm up properly (ankles, knees). "
+                               "Knee sore afterwards → next day's run becomes a walk or bike."},
           "run", 60, 6.5, 8 if easy else 18)
 
 
-def snowboard(w, day, f):
-    w.add(day, {"title": "Snowboard day (optional)", "sport": "other",
-                "description": "Cross-training: legs, balance, core. Not aerobic triathlon work, and the eccentric load tires the legs: "
-                               f"keep Sunday's long run easy. No snow this week? Ride indoor {dur(r5(90 * f))} Z2 with 3 × 10 min tempo instead."},
-          "xtrain", 180, 0, 0)
-
-
-# ----------------------------------------------------------------------------- weeks
-def winter_load_week(phase, f, idx, z):
-    """Winter layout: Mon swim + Gym C · Tue run quality + Gym A · Wed swim + football ·
-    Thu indoor bike quality + Gym B · Fri swim + easy run · Sat snowboard (or indoor ride) · Sun long run."""
-    w = Week()
-    swim_technique(w, "mon", f) if phase == "base" else swim_endurance(w, "mon", f)
-    gym(w, "mon", "winter", "C")
-    run_quality(w, "tue", phase, f, idx, z)
-    gym(w, "tue", phase, "A")
-    swim_css(w, "wed", f, phase)
-    football(w, "wed")
-    bike_quality(w, "thu", phase, f, idx)
-    title, steps = w.sessions[-1][1]["title"], w.sessions[-1][1]["steps"]
-    w.sessions[-1][1]["title"] = title.replace("Bike:", "Indoor bike:")
-    gym(w, "thu", phase, "B")
-    swim_endurance(w, "fri", f) if phase == "base" else swim_technique(w, "fri", f)
-    bike_endurance(w, "fri", r5(65 * f), "Indoor trainer. Z2 with 5 × 1 min high cadence (110+ rpm). Keeps the bike legs through winter.")
-    w.sessions[-1][1]["title"] = "Indoor bike endurance"
-    snowboard(w, "sat", f)
-    long_run(w, "sun", min(rkm(15 * f), 20), z, finish=(phase != "base" and idx % 2 == 1))
-    return w
-
-
-def winter_easy_week(z, f, event=None):
-    w = Week()
-    swim_easy(w, "mon", r100(2200 * f))
-    run_easy(w, "tue", rkm(7 * f), z)
-    if not event:
-        football(w, "wed", easy=True)
-    bike_endurance(w, "thu", r5(60 * f), "Indoor, easy, high cadence.")
-    gym(w, "thu", "recovery", "A")
-    swim_technique(w, "fri", 0.7 * f)
-    if event:
-        add_tests(w, z)
+def brick(w, day, bike_min, run_min, z, phase, winter, f, note=None):
+    """Saturday: one ~2 h session, bike then run straight off it."""
+    if phase == "base":
+        tgt = "Z2 · 65–75% FTP" + (" with 3 × 8 min @ 80–88% FTP" if bike_min >= 80 else "")
+        hard = 24 if bike_min >= 80 else 0
+    elif phase == "build":
+        tgt, hard = "Z2 with 3 × 15 min @ 85–90% FTP", 45
     else:
-        snowboard(w, "sat", f)
-        long_run(w, "sun", rkm(11 * f), z)
-    return w
+        tgt, hard = "Z2 with 4 × 10 min @ race effort (90–95% FTP)", 40
+    desc = ("Indoor trainer in winter (Zwift or ERG). " if winter else "") + "Eat 60 g carbs/h. Go straight into the run: transition under 2 min."
+    if winter:
+        desc += " Snowboarding on Saturday? Do this on Sunday instead and drop the Sunday long run."
+    w.add(day, {"title": "Brick: " + ("indoor " if winter else "") + "bike", "duration": dur(bike_min), "target": tgt, "description": desc}, "bike", bike_min, 0, hard)
+    if run_min:
+        quick = phase != "base"
+        s = {"title": "Brick: run off the bike", "duration": dur(run_min),
+             "target": (f"first 5 min easy, then {z['tempo'] if phase == 'build' else z['r10k']}" if quick else f"easy · {z['easy']}, quick cadence")}
+        if note:
+            s["description"] = note
+        w.add(day, s, "run", run_min, round(run_min * 60 / (z["p"] + (30 if quick else 70)), 1), run_min * 0.6 if quick else 0)
 
 
-def load_week(phase, f, idx, z, sharpen=False, ride_scale=1.0):
-    """Hard/easy layout: Mon easy · Tue run quality + heavy gym · Wed swim + bike quality ·
-    Thu easy run + power gym · Fri swim · Sat long ride (+ brick) · Sun long run."""
+def long_run_min(w, day, mins, z, finish=False, knee=False):
+    s = {"title": "Long run", "duration": dur(mins), "target": f"Z2 · {z['easy']}"}
+    hard = 0
+    if finish:
+        s["target"] += f" · last 15 min @ {z['tempo']}"
+        hard = 15
+    if knee:
+        s["description"] = KNEE
+    w.add(day, s, "run", mins, round(mins * 60 / (z["p"] + 68), 1), hard)
+
+
+def tue_run(w, n, phase, f, idx, z):
+    """Tuesday noon: the run session. Knee-friendly first (uphill only), track from Build 1."""
+    if n <= 4:
+        reps = 6 if idx < 9 else 8
+        w.add("tue", {"title": "Run: easy + uphill sprints", "steps": [
+            {"label": "Easy", "duration": "15min" if idx < 9 else "20min", "target": f"easy · {z['easy']}"},
+            {"label": "Uphill sprints", "repeat": reps, "duration": "10s", "target": "steep hill, ~90%, walk down (uphill is kind to the knee)"},
+            {"label": "Easy", "duration": "10min"}], "description": KNEE}, "run", 40, 6, reps * 10 / 60)
+    else:
+        run_quality(w, "tue", phase, f, idx, z)
+
+
+def week_load(n, phase, f, idx, z, mon, kind):
     w = Week()
+    winter = is_winter(mon)
+    ramp = spring_ramp(mon)
     p = "specific" if phase == "peak" else phase
+    sharpen = kind == "Sharpen"
     if sharpen:
-        f *= 0.85
+        f *= 0.8
+    # Mon: noon jog + evening swim
+    jog(w, "mon", r5(min(25 if n == 5 else 35, 18 + 1.2 * idx) * min(f, 1.1)), z, knee=idx < 11)
     swim_technique(w, "mon", f) if p == "base" else swim_endurance(w, "mon", f)
-    run_quality(w, "tue", p, f, idx, z)
-    gym(w, "tue", p if p != "specific" else "specific", "A")
-    swim_css(w, "wed", f, p)
-    bike_quality(w, "wed", p, f, idx)
-    run_easy(w, "thu", rkm({"base": 8, "build": 9, "specific": 9}[p] * f), z)
-    if p in ("base", "build") and not sharpen:
-        gym(w, "thu", p, "B")
+    # Tue: noon run + evening gym A
+    tue_run(w, n, p, f, idx, z)
+    gym(w, "tue", "base" if n <= 5 and n >= 3 else p if p != "specific" else "specific", "A")
+    # Wed: noon football (winter) or easy run; evening gym B
+    if winter:
+        football(w, "wed")
     else:
-        dist = r100(2000 * min(f, 1.1))
-        w.add("thu", {"title": "Swim: speed + race skills", "distance": f"{dist}m",
-                      "target": "12 × 50m fast (25 m sprint / 25 m easy), sighting, drafting on feet, deck-up starts",
-                      "description": "Open water or with a training partner when possible: practise swimming on someone's feet and around buoys."},
-              "swim", dist / 100 * 2.0, dist / 1000, 8)
-    (swim_technique if p != "base" else swim_endurance)(w, "fri", f)
-    ride = r5({"base": 150, "build": 170, "specific": 155}[p] * f * ride_scale)
-    brick = {"base": 0, "build": rkm(3 * f), "specific": rkm(5 * min(f, 1.1))}[p]
-    long_ride(w, "sat", ride, p, brick, z)
-    lr = rkm({"base": 15, "build": 17, "specific": 16}[p] * f)
-    long_run(w, "sun", min(lr, 22), z, finish=(p != "base" and idx % 2 == 1))
-    bike_endurance(w, "mon", r5({"base": 50, "build": 60, "specific": 60}[p] * f * ride_scale), "Easy spin after the swim: Z1–Z2, high cadence, legs loose for Tuesday.")
+        run_easy(w, "wed", rkm(5 * min(f, 1.1)), z)
+        w.sessions[-1][1]["title"] = "Noon easy run + strides"
+    if not sharpen and p != "specific":
+        gym(w, "wed", "upper" if winter or p == "base" else "build", "B")
+    # Thu: noon bootcamp + evening swim
+    if not sharpen:
+        bootcamp(w, "thu")
+    swim_css(w, "thu", f, p)
+    # Fri: evening gym C in winter base, bike quality from spring
+    if winter and p == "base":
+        gym(w, "fri", "base", "B")
+        bike_endurance(w, "fri", r5(40 * min(f, 1.1)), "Indoor, right after the gym or at home later: Z2, high cadence. Keeps the bike legs through winter.")
+        w.sessions[-1][1]["title"] = "Indoor spin"
+    else:
+        bike_quality(w, "fri", p, f, idx)
+        if winter:
+            w.sessions[-1][1]["title"] = w.sessions[-1][1]["title"].replace("Bike:", "Indoor bike:")
+    # Sat: brick ~2 h (longer from spring)
+    bike = r5({"base": 85 if winter else 110, "build": 150, "specific": 140}[p] * f * (ramp if not winter else 1))
+    run = r5({"base": 15, "build": 20, "specific": 25}[p] * min(f, 1.1))
+    brick(w, "sat", bike, run, z, p, winter, f)
+    # Sun: long run (+ optional swim)
+    lr = r5(min(85, {"base": 45 + 2 * (idx - 7), "build": 75, "specific": 70}[p] * (f if p != "base" else 1)))
+    long_run_min(w, "sun", max(45, lr), z, finish=(p != "base" and idx % 2 == 1))
+    if True:
+        swim_endurance(w, "sun", 0.8 * f)
+        w.sessions[-1][1]["description"] = "Optional if the week has been heavy. Open water when possible from May."
     return w
 
 
-def add_tests(w, z):
-    """5 km run TT on Saturday; swim CSS and bike FTP tests on Sunday."""
-    w.add("sat", {"title": "Test: 5 km run time trial", "distance": "5km", "target": "all-out, even pacing, track or flat loop",
-                  "description": "Warm up 15 min + 3 strides. Record time and avg HR: it updates your run paces."},
-          "run", 45, 8.0, 20)
+def add_tests(w, z, run=True):
+    """5 km run TT on Saturday (after the brick slot); swim CSS and bike FTP tests on Sunday."""
+    if run:
+        w.add("sat", {"title": "Test: 5 km run time trial", "distance": "5km", "target": "all-out, even pacing, track or flat loop",
+                      "description": "Warm up 15 min + 3 strides. Record time and avg HR: it updates your run paces. "
+                                     "Only if the knee has been pain-free for 4 weeks; otherwise run 20 min steady at tempo and note pace and HR."},
+              "run", 45, 8.0, 20)
     w.add("sun", {"title": "Test: swim CSS 400 + 200", "steps": [
         {"label": "Warm-up", "distance": "400m"}, {"label": "400 m time trial", "distance": "400m", "target": "all-out"},
         {"label": "Easy", "distance": "200m"}, {"label": "200 m time trial", "distance": "200m", "target": "all-out"},
         {"label": "Cool-down", "distance": "300m"}], "description": "CSS = (400 time − 200 time) / 2 per 100 m."},
           "swim", 40, 1.5, 8)
-    w.add("sun", {"title": "Test: bike FTP 20 min", "steps": [
+    w.add("sat" if not run else "sun", {"title": "Test: bike FTP 20 min", "steps": [
         {"label": "Warm-up", "duration": "20min", "target": "incl. 3 × 1 min fast"},
         {"label": "20 min test", "duration": "20min", "target": "best sustainable effort"},
         {"label": "Cool-down", "duration": "15min"}], "description": "FTP ≈ 95% of the 20-min average power. Indoor trainer is fine."},
           "bike", 55, 0, 20)
 
 
-def recovery_week(phase, z, event=None, f=1.0):
-    """Calmer week: ~60-65% of the load weeks. Same rhythm, shorter, almost no intensity."""
+def week_easy(n, phase, z, mon, tests=False, f=1.0):
+    """Calmer week: ~60% of the load. Same rhythm, shorter, almost no intensity."""
     w = Week()
+    winter = is_winter(mon)
     swim_easy(w, "mon", r100(2200 * f))
-    run_easy(w, "tue", rkm(7 * f), z)
-    bike_endurance(w, "wed", r5(70 * f), "Easy, high cadence. Legs should feel fresh by the weekend.")
-    gym(w, "thu", "recovery", "A")
-    swim_technique(w, "fri", 0.7 * f)
-    if event and event[3] == "test":
-        run_easy(w, "thu", rkm(6 * f), z, strides=False)
-        add_tests(w, z)
+    jog(w, "tue", r5(30 * f), z, title="Noon easy run", strides=True)
+    gym(w, "tue", "recovery", "A")
+    if winter:
+        football(w, "wed", easy=True)
     else:
-        bike_endurance(w, "sat", r5(120 * f), "Z2 with 3 × 3 min @ 95% FTP to stay sharp.")
-        long_run(w, "sun", rkm(12 * f), z)
+        jog(w, "wed", r5(30 * f), z, title="Noon easy run")
+    bootcamp(w, "thu", easy=True)
+    swim_technique(w, "thu", 0.7 * f)
+    if tests:
+        add_tests(w, z, run=n >= 3)
+        if n < 3:
+            long_run_min(w, "sun", RTR[3][3], z, knee=True)
+    else:
+        brick(w, "sat", r5(70 * f), 10, z, "base", winter, f)
+        long_run_min(w, "sun", r5(45 * f), z)
     return w
 
 
-def race_week(z, event):
+def week_return(i, z, mon, kind, f):
+    """Return-to-run weeks (Nov–Dec): the Tuesday and weekend runs follow RTR, everything else is the normal layout."""
+    if kind == "Tests":
+        w = week_easy(1, "base", z, mon, tests=True, f=0.85)
+        w.sessions = [s for s in w.sessions if not (s[0] == "tue" and s[2]["sport"] == "run")]
+        jog(w, "tue", RTR[3][1], z, title="Noon easy run", knee=True)
+        return w
+    m, t, b, su = RTR[i]
+    w = Week()
+    winter = is_winter(mon)
+    if kind != "Start":
+        if m:
+            jog(w, "mon", m, z, knee=True)
+        swim_technique(w, "mon", f)
+        jog(w, "tue", t, z, title="Noon easy run", strides=i >= 2, knee=True)
+        gym(w, "tue", "return", "A")
+        football(w, "wed", easy=True)
+        w.sessions[-1][1]["description"] = ("Play at 80% for the first weeks: no all-out sprints, stop if the knee hurts. " + KNEE)
+        gym(w, "wed", "upper", "B")
+        bootcamp(w, "thu")
+        swim_css(w, "thu", f, "base")
+    gym(w, "fri", "return", "C")
+    brick(w, "sat", r5(60 if kind == "Start" else 75), b, z, "base", winter, f,
+          note="Easy jog off the bike, flat. " + KNEE)
+    long_run_min(w, "sun", su, z, knee=True)
+    if kind == "Start":
+        w.sessions[-1][1]["description"] = "Your first run of the plan: the 5 km you ran pain-free last week, slow. " + KNEE
+    return w
+
+
+def week_trip(k, z, mon):
+    """Guatemala, 17–30 Dec, and the way back. Light and flexible: do what the day allows."""
+    w = Week()
+    if k == 1:  # 14–20 Dec: normal Mon–Wed, travel Thu 17
+        jog(w, "mon", 20, z, knee=True)
+        swim_technique(w, "mon", 0.8)
+        jog(w, "tue", 30, z, title="Noon easy run", strides=True, knee=True)
+        gym(w, "tue", "return", "A")
+        football(w, "wed", easy=True)
+        gym(w, "wed", "upper", "B")
+        w.add("thu", {"title": "Travel to Guatemala", "sport": "other", "description": "Travel day: walk, stretch, drink a lot. Nothing else."}, "other", 0, 0, 0)
+        jog(w, "sat", 35, z, title="Easy run (Guatemala)", knee=True)
+        w.sessions[-1][1]["description"] = ("Guatemala City sits at ~1,500 m: run by feel, heart rate will be 5–10 beats higher at the same pace. " + KNEE)
+        gym(w, "sun", "travel", "A")
+    elif k == 2:  # 21–27 Dec
+        for d, mins in (("tue", 35), ("thu", 35), ("sat", 45)):
+            jog(w, d, mins, z, title="Easy run (Guatemala)", strides=d == "thu", knee=True)
+        gym(w, "mon", "travel", "A")
+        gym(w, "fri", "travel", "A")
+        w.add("wed", {"title": "Swim or ride if you can (optional)", "sport": "other", "duration": "45min",
+                      "description": "Pool, open water, a rental or spin bike: anything aerobic and easy. Skip it without guilt."}, "other", 45, 0, 0)
+        w.add("sun", {"title": "Christmas / rest", "sport": "other", "description": "Enjoy it."}, "other", 0, 0, 0)
+    else:  # 28 Dec – 3 Jan: back on the 31st, settle in
+        jog(w, "mon", 35, z, title="Easy run (Guatemala)", strides=True, knee=True)
+        gym(w, "tue", "travel", "A")
+        jog(w, "wed", 40, z, title="Easy run (Guatemala)", knee=True)
+        w.add("thu", {"title": "Travel home", "sport": "other", "description": "Travel day (31 Dec). Walk and stretch."}, "other", 0, 0, 0)
+        brick(w, "sat", 75, 15, z, "base", True, 0.8, note="First session back: easy. " + KNEE)
+        long_run_min(w, "sun", 45, z, knee=True)
+        swim_technique(w, "sun", 0.7)
+    return w
+
+
+def race_week(z, title, olympic=True):
     w = Week()
     swim_easy(w, "mon", 2000)
     w.add("tue", {"title": "Run: openers", "steps": [
@@ -508,21 +658,20 @@ def race_week(z, event):
         {"label": "Warm-up", "duration": "15min"}, {"label": "Race pace", "repeat": 3, "duration": "3min", "target": "race effort, 3 min easy"},
         {"label": "Sprints", "repeat": 3, "duration": "20s", "target": "out of the saddle"}, {"label": "Cool-down", "duration": "10min"}]}, "bike", 55, 0, 10)
     swim_easy(w, "thu", 1500)
+    w.sessions[-1][1]["description"] = "Skip bootcamp this week."
     w.add("fri", {"title": "Rest or 20 min jog", "sport": "other", "description": "Check the bike, pack the bag, sleep."}, "other", 0, 0, 0)
     w.add("sat", {"title": "Pre-race: bike + run openers", "duration": "30min", "target": "easy + 3 × 1 min race effort, then 10 min jog with strides"}, "bike", 40, 0, 4)
-    kind = event[3] if event else "race_a"
-    dist = "Olympic: 1.5 km swim · 40 km bike · 10 km run" if "olympic" in kind or kind == "race_a" else "Sprint: 750 m swim · 20 km bike · 5 km run"
-    w.add("sun", {"title": event[4] if event else "Race", "description": f"{dist}. Goals: top-5 swim pack exit, bike in the front pack (38–40 km/h), run {z['r10k']}."},
-          "other", 130 if "Olympic" in dist else 70, 0, 100)
+    dist = "Olympic: 1.5 km swim · 40 km bike · 10 km run" if olympic else "Sprint: 750 m swim · 20 km bike · 5 km run"
+    w.add("sun", {"title": title, "description": f"{dist}. Goals: top-5 swim pack exit, bike in the front pack (38–40 km/h), run {z['r10k']}."},
+          "other", 130 if olympic else 70, 0, 100)
     return w
 
 
-def b_race_recovery_week(z, event):
-    w = recovery_week("x", z, f=0.9)
+def b_race_week(z, title, sprint):
+    w = week_easy(9, "build", z, dt.date(2027, 6, 1), f=0.9)
     w.sessions = [s for s in w.sessions if s[0] not in ("sat", "sun")]
     w.add("sat", {"title": "Pre-race openers", "duration": "30min", "target": "easy bike + 10 min jog with 4 strides"}, "bike", 40, 0, 3)
-    sprint = "sprint" in event[3]
-    w.add("sun", {"title": event[4], "description": ("Sprint: 750 m · 20 km · 5 km." if sprint else "Olympic: 1.5 km · 40 km · 10 km.") + " Race it hard; it is training for the A races."},
+    w.add("sun", {"title": title, "description": ("Sprint: 750 m · 20 km · 5 km." if sprint else "Olympic: 1.5 km · 40 km · 10 km.") + " Race it hard; it is training for the A races."},
           "other", 70 if sprint else 130, 0, 60 if sprint else 100)
     return w
 
@@ -530,44 +679,41 @@ def b_race_recovery_week(z, event):
 # ----------------------------------------------------------------------------- build season
 def main():
     os.makedirs(OUT, exist_ok=True)
+    for old in os.listdir(OUT):
+        if old.startswith("block-") and old.endswith(".yaml"):
+            os.remove(os.path.join(OUT, old))
     summary = []
-    week_no = 0
+    idx = 0
     start = START
-    for (n, name, phase, factor, goal, nweeks) in BLOCKS:
+    for (n, name, phase, factor, goal, kinds) in BLOCKS:
         z = run_zones(n)
         weeks = []
-        ev = {(e[0], e[1]): e for e in EVENTS}
-        for wk in range(1, nweeks + 1):
-            event = ev.get((n, wk))
+        for wk, kind in enumerate(kinds, 1):
             mon = start + dt.timedelta(weeks=wk - 1)
             winter = is_winter(mon)
-            idx = week_no
-            week_no += 1
-            last = wk == nweeks
-            if last and phase == "peak":
-                w, kind = race_week(z, event), "Race"
-            elif last:
-                if event and event[3].startswith("race"):
-                    w = b_race_recovery_week(z, event)
-                elif winter:
-                    w = winter_easy_week(z, factor * EASY, event)
-                else:
-                    w = recovery_week(phase, z, event, f=factor * EASY)
-                kind = "Easy"
-            elif phase == "peak" and wk == 3:
-                w, kind = load_week(phase, factor, idx, z, sharpen=True), "Sharpen"
+            event = ""
+            if n == 1:
+                w = week_return(idx, z, mon, kind, factor * LOAD_STEPS.get(kind, 1.0))
+                event = "Official start Fri 20 Nov" if kind == "Start" else "Bike + swim tests" if kind == "Tests" else ""
+            elif n == 2:
+                w = week_trip(wk, z, mon)
+                event = {1: "Guatemala from Thu 17 Dec", 2: "Guatemala", 3: "Back on 31 Dec"}[wk]
+            elif kind == "Race":
+                event = RACE_TITLES[n]
+                w = race_week(z, event)
+            elif kind.startswith("BRace"):
+                event = RACE_TITLES[n]
+                w = b_race_week(z, event, sprint=kind.endswith("sprint"))
+            elif kind in ("Easy", "Tests"):
+                w = week_easy(n, phase, z, mon, tests=kind == "Tests", f=factor * 1.15)
+                event = "Tests" if kind == "Tests" else ""
             else:
-                f = factor * LOAD_STEPS[wk]
-                w = winter_load_week(phase, f, idx, z) if winter else load_week(phase, f, idx, z, ride_scale=spring_ramp(mon))
-                kind = ["Load", "Load+", "Load++"][wk - 1]
-            weeks.append((wk, kind, w, event, mon, winter))
+                w = week_load(n, phase, factor * LOAD_STEPS.get(kind, 1.0), idx, z, mon, kind)
+            label = {"BRace-sprint": "Race", "BRace-olympic": "Race", "Tests": "Easy", "Trip-1": "Travel", "Trip-2": "Travel", "Trip-3": "Travel"}.get(kind, kind)
+            weeks.append((wk, label, w, event, mon, winter))
+            idx += 1
 
-        doc = {
-            "name": f"{n:02d} · {name}",
-            "start": start.isoformat(),
-            "goal": goal,
-            "weeks": [],
-        }
+        doc = {"name": f"{n:02d} · {name}", "start": start.isoformat(), "goal": goal, "weeks": []}
         for wk, kind, w, event, mon, winter in weeks:
             order = sorted(w.sessions, key=lambda s: DAYS.index(s[0]))
             doc["weeks"].append({"week": wk, "focus": kind + (" · winter" if winter else ""), "sessions": [s for _, s, _ in order]})
@@ -587,21 +733,21 @@ def main():
                 "winter": winter,
                 "hard_h": round(sum(x["hard"] for x in m) / 60, 2),
                 "pace_10k": mmss(z["p"]),
-                "event": event[4] if event else "",
+                "event": event,
             })
         path = os.path.join(OUT, f"block-{n:02d}-{name.lower().replace(' ', '-')}.yaml")
         with open(path, "w") as fh:
-            fh.write(f"# Season 2026-27 · block {n} of {len(BLOCKS)} · {name} ({phase}, {nweeks} weeks)\n# Generated by scripts/season/generate.py — edit the generator, not this file.\n")
+            fh.write(f"# Season 2026-27 · block {n} of {len(BLOCKS)} · {name} ({phase}, {len(kinds)} weeks)\n# Generated by scripts/season/generate.py — edit the generator, not this file.\n")
             yaml.dump(doc, fh, Dumper=NoAliasDumper, sort_keys=False, allow_unicode=True, width=120)
-        start = start + dt.timedelta(weeks=nweeks)
+        start = start + dt.timedelta(weeks=len(kinds))
     with open(os.path.join(OUT, "season-summary.json"), "w") as fh:
-        json.dump({"weeks": summary, "blocks": [dict(n=b[0], name=b[1], phase=b[2], factor=b[3], goal=b[4], weeks=b[5]) for b in BLOCKS],
+        json.dump({"weeks": summary, "blocks": [dict(n=b[0], name=b[1], phase=b[2], factor=b[3], goal=b[4], weeks=len(b[5])) for b in BLOCKS],
                    "zones": {n: run_zones(n) for n, *_ in BLOCKS}, "start": START.isoformat(),
                    "run_now": mmss(RUN_NOW_10K), "run_goal": mmss(RUN_GOAL_10K)}, fh, indent=1, ensure_ascii=False)
     print(f"wrote {len(BLOCKS)} blocks, {len(summary)} weeks to {os.path.normpath(OUT)}")
     for s in summary:
         tot = s["swim_h"] + s["bike_h"] + s["run_h"] + s["gym_h"] + s["other_h"]
-        print(f"B{s['block']:02d}W{s['week_in_block']} {s['monday']} {s['type']:<8}{'*' if s['winter'] else ' '} tot {tot:5.1f}h xt {s['xtrain_h']:.0f}h swim {s['swim_km']:4.1f}km bike {s['bike_h']:4.1f}h run {s['run_km']:5.1f}km gym {s['gym_n']} hard {s['hard_h']:.1f}h {s['event']}")
+        print(f"B{s['block']:02d}W{s['week_in_block']} {s['monday']} {s['type']:<8}{'*' if s['winter'] else ' '} tot {tot:5.1f}h swim {s['swim_km']:4.1f}km bike {s['bike_h']:4.1f}h run {s['run_km']:5.1f}km/{s['run_h']:.1f}h gym {s['gym_n']} hard {s['hard_h']:.1f}h {s['event']}")
 
 
 if __name__ == "__main__":

@@ -108,9 +108,9 @@ export function countdownTxt(n: number): string {
 
 /** The season's placeholder races from the plan generator (scripts/season/generate.py EVENTS). */
 export const SEASON_RACES: { name: string; date: string; kind: RaceKind; dist: string; priority: "A" | "B" | "C"; note: string }[] = [
-  { name: "B race: sprint", date: "2027-05-16", kind: "tri", dist: "Sprint", priority: "B", note: "Placeholder date from the season plan (block 7, week 4). Change it once the calendar is out." },
-  { name: "B race: Olympic", date: "2027-06-13", kind: "tri", dist: "Olympic", priority: "B", note: "Placeholder date from the season plan (block 8, week 4)." },
-  { name: "A race 1: Olympic / national ranking", date: "2027-07-11", kind: "tri", dist: "Olympic", priority: "A", note: "Placeholder date from the season plan (block 9, race week)." },
-  { name: "Sprint, draft-legal", date: "2027-08-08", kind: "tri", dist: "Sprint", priority: "C", note: "Optional. Placeholder date from the season plan (block 10, week 4)." },
-  { name: "A race 2: national selection", date: "2027-09-05", kind: "tri", dist: "Olympic", priority: "A", note: "Season goal. Placeholder date from the season plan (block 11, race week)." },
+  { name: "B race: sprint", date: "2027-05-23", kind: "tri", dist: "Sprint", priority: "B", note: "Placeholder date from the season plan (end of Build 2). Change it once the calendar is out." },
+  { name: "B race: Olympic", date: "2027-06-13", kind: "tri", dist: "Olympic", priority: "B", note: "Placeholder date from the season plan (end of the Specific block)." },
+  { name: "A race 1: Olympic / national ranking", date: "2027-07-11", kind: "tri", dist: "Olympic", priority: "A", note: "Placeholder date from the season plan (Peak 1, race week)." },
+  { name: "Sprint, draft-legal", date: "2027-08-08", kind: "tri", dist: "Sprint", priority: "C", note: "Optional. Placeholder date from the season plan (end of the Race block)." },
+  { name: "A race 2: national selection", date: "2027-09-05", kind: "tri", dist: "Olympic", priority: "A", note: "Season goal. Placeholder date from the season plan (Peak 2, race week)." },
 ];

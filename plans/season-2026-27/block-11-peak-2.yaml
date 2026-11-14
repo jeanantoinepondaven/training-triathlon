@@ -8,17 +8,16 @@ weeks:
   focus: Load
   sessions:
   - day: mon
+    sport: run
+    title: Noon jog
+    duration: 35min
+    target: easy · 4:25–4:55/km
+  - day: mon
     sport: swim
     title: Swim endurance
     distance: 2900m
     target: steady CSS +4–6s/100m, bilateral breathing, sight every 6 strokes
     description: Main set e.g. 3 × (4 × 200m) with 20s rest; open water when possible from May.
-  - day: mon
-    sport: bike
-    title: Bike endurance
-    duration: 1h00
-    target: Z2 · 65–75% FTP · cadence 85–95
-    description: 'Easy spin after the swim: Z1–Z2, high cadence, legs loose for Tuesday.'
   - day: tue
     sport: run
     title: 'Track: 10 × 400'
@@ -74,6 +73,16 @@ weeks:
       reps: 10/side
       notes: block B
   - day: wed
+    sport: run
+    title: Noon easy run + strides
+    distance: 5.0km
+    target: Z2 · 4:25–4:55/km · finish 6 × 20s strides
+  - day: thu
+    sport: other
+    title: Bootcamp (work)
+    duration: 45min
+    description: 'Counts as conditioning. Knee first: swap jumps for step-ups or bike sprints if it complains.'
+  - day: thu
     sport: swim
     title: 'Swim: race starts + CSS'
     description: 'Draft-legal: the first 200 m decide the pack. Practise fast starts and sighting.'
@@ -94,7 +103,7 @@ weeks:
       target: with buoy + paddles, steady
     - label: Cool-down
       distance: 200m
-  - day: wed
+  - day: fri
     sport: bike
     title: 'Bike: surges + race pace'
     steps:
@@ -110,66 +119,42 @@ weeks:
       target: 88–92% FTP, aero / tight position
     - label: Cool-down
       duration: 10min
-  - day: thu
-    sport: run
-    title: Easy run + strides
-    distance: 9.0km
-    target: Z2 · 4:25–4:55/km · finish 6 × 20s strides
-  - day: thu
-    sport: swim
-    title: 'Swim: speed + race skills'
-    distance: 2000m
-    target: 12 × 50m fast (25 m sprint / 25 m easy), sighting, drafting on feet, deck-up starts
-    description: 'Open water or with a training partner when possible: practise swimming on someone''s feet and around buoys.'
-  - day: fri
-    sport: swim
-    title: Swim technique
-    description: 'Long, relaxed strokes. Drills: catch-up, fists, 6-kick switch.'
-    steps:
-    - label: Warm-up
-      distance: 400m
-      target: easy, mixed strokes
-    - label: Drills
-      repeat: 8
-      distance: 50m
-      target: catch-up / fists, 15s rest
-    - label: Main
-      repeat: 8
-      distance: 200m
-      target: CSS +6s/100m, 20s rest
-    - label: Cool-down
-      distance: 200m
   - day: sat
     sport: bike
-    title: Long ride
-    duration: 2h35
+    title: 'Brick: bike'
+    duration: 2h20
     target: Z2 with 4 × 10 min @ race effort (90–95% FTP)
+    description: 'Eat 60 g carbs/h. Go straight into the run: transition under 2 min.'
   - day: sat
     sport: run
-    title: Brick run off the bike
-    distance: 5.0km
-    target: straight off the bike · first km 3:48–3:54/km, then 3:30/km
-    description: Transition under 2 min. Quick cadence, relaxed shoulders.
+    title: 'Brick: run off the bike'
+    duration: 25min
+    target: first 5 min easy, then 3:30/km
   - day: sun
     sport: run
     title: Long run
-    distance: 16.0km
+    duration: 1h10
     target: Z2 · 4:25–4:55/km
+  - day: sun
+    sport: swim
+    title: Swim endurance
+    distance: 2300m
+    target: steady CSS +4–6s/100m, bilateral breathing, sight every 6 strokes
+    description: Optional if the week has been heavy. Open water when possible from May.
 - week: 2
   focus: Load+
   sessions:
+  - day: mon
+    sport: run
+    title: Noon jog
+    duration: 35min
+    target: easy · 4:25–4:55/km
   - day: mon
     sport: swim
     title: Swim endurance
     distance: 3100m
     target: steady CSS +4–6s/100m, bilateral breathing, sight every 6 strokes
     description: Main set e.g. 3 × (4 × 200m) with 20s rest; open water when possible from May.
-  - day: mon
-    sport: bike
-    title: Bike endurance
-    duration: 1h05
-    target: Z2 · 65–75% FTP · cadence 85–95
-    description: 'Easy spin after the swim: Z1–Z2, high cadence, legs loose for Tuesday.'
   - day: tue
     sport: run
     title: 'Run: 3 × 3 km'
@@ -224,6 +209,16 @@ weeks:
       reps: 10/side
       notes: block B
   - day: wed
+    sport: run
+    title: Noon easy run + strides
+    distance: 5.5km
+    target: Z2 · 4:25–4:55/km · finish 6 × 20s strides
+  - day: thu
+    sport: other
+    title: Bootcamp (work)
+    duration: 45min
+    description: 'Counts as conditioning. Knee first: swap jumps for step-ups or bike sprints if it complains.'
+  - day: thu
     sport: swim
     title: 'Swim: race starts + CSS'
     description: 'Draft-legal: the first 200 m decide the pack. Practise fast starts and sighting.'
@@ -244,7 +239,7 @@ weeks:
       target: with buoy + paddles, steady
     - label: Cool-down
       distance: 200m
-  - day: wed
+  - day: fri
     sport: bike
     title: 'Bike: surges + race pace'
     steps:
@@ -260,66 +255,42 @@ weeks:
       target: 88–92% FTP, aero / tight position
     - label: Cool-down
       duration: 10min
-  - day: thu
-    sport: run
-    title: Easy run + strides
-    distance: 9.5km
-    target: Z2 · 4:25–4:55/km · finish 6 × 20s strides
-  - day: thu
-    sport: swim
-    title: 'Swim: speed + race skills'
-    distance: 2100m
-    target: 12 × 50m fast (25 m sprint / 25 m easy), sighting, drafting on feet, deck-up starts
-    description: 'Open water or with a training partner when possible: practise swimming on someone''s feet and around buoys.'
-  - day: fri
-    sport: swim
-    title: Swim technique
-    description: 'Long, relaxed strokes. Drills: catch-up, fists, 6-kick switch.'
-    steps:
-    - label: Warm-up
-      distance: 400m
-      target: easy, mixed strokes
-    - label: Drills
-      repeat: 8
-      distance: 50m
-      target: catch-up / fists, 15s rest
-    - label: Main
-      repeat: 8
-      distance: 200m
-      target: CSS +6s/100m, 20s rest
-    - label: Cool-down
-      distance: 200m
   - day: sat
     sport: bike
-    title: Long ride
-    duration: 2h45
+    title: 'Brick: bike'
+    duration: 2h30
     target: Z2 with 4 × 10 min @ race effort (90–95% FTP)
+    description: 'Eat 60 g carbs/h. Go straight into the run: transition under 2 min.'
   - day: sat
     sport: run
-    title: Brick run off the bike
-    distance: 5.5km
-    target: straight off the bike · first km 3:48–3:54/km, then 3:30/km
-    description: Transition under 2 min. Quick cadence, relaxed shoulders.
+    title: 'Brick: run off the bike'
+    duration: 25min
+    target: first 5 min easy, then 3:30/km
   - day: sun
     sport: run
     title: Long run
-    distance: 17.0km
-    target: Z2 · 4:25–4:55/km · last 3 km @ 3:48–3:54/km
-- week: 3
-  focus: Sharpen
-  sessions:
-  - day: mon
+    duration: 1h15
+    target: Z2 · 4:25–4:55/km · last 15 min @ 3:48–3:54/km
+  - day: sun
     sport: swim
     title: Swim endurance
     distance: 2500m
     target: steady CSS +4–6s/100m, bilateral breathing, sight every 6 strokes
-    description: Main set e.g. 3 × (4 × 200m) with 20s rest; open water when possible from May.
+    description: Optional if the week has been heavy. Open water when possible from May.
+- week: 3
+  focus: Sharpen
+  sessions:
   - day: mon
-    sport: bike
-    title: Bike endurance
-    duration: 50min
-    target: Z2 · 65–75% FTP · cadence 85–95
-    description: 'Easy spin after the swim: Z1–Z2, high cadence, legs loose for Tuesday.'
+    sport: run
+    title: Noon jog
+    duration: 30min
+    target: easy · 4:25–4:55/km
+  - day: mon
+    sport: swim
+    title: Swim endurance
+    distance: 2300m
+    target: steady CSS +4–6s/100m, bilateral breathing, sight every 6 strokes
+    description: Main set e.g. 3 × (4 × 200m) with 20s rest; open water when possible from May.
   - day: tue
     sport: run
     title: 'Track: kick session'
@@ -379,6 +350,11 @@ weeks:
       reps: 10/side
       notes: block B
   - day: wed
+    sport: run
+    title: Noon easy run + strides
+    distance: 4.0km
+    target: Z2 · 4:25–4:55/km · finish 6 × 20s strides
+  - day: thu
     sport: swim
     title: 'Swim: race starts + CSS'
     description: 'Draft-legal: the first 200 m decide the pack. Practise fast starts and sighting.'
@@ -390,7 +366,7 @@ weeks:
       distance: 50m
       target: first 25 m all-out, dive or deep-water start
     - label: CSS
-      repeat: 12
+      repeat: 11
       distance: 100m
       target: CSS -1s/100m, 10s rest
     - label: Pull
@@ -399,7 +375,7 @@ weeks:
       target: with buoy + paddles, steady
     - label: Cool-down
       distance: 200m
-  - day: wed
+  - day: fri
     sport: bike
     title: 'Bike: surges + race pace'
     steps:
@@ -415,51 +391,28 @@ weeks:
       target: 88–92% FTP, aero / tight position
     - label: Cool-down
       duration: 10min
-  - day: thu
-    sport: run
-    title: Easy run + strides
-    distance: 7.5km
-    target: Z2 · 4:25–4:55/km · finish 6 × 20s strides
-  - day: thu
-    sport: swim
-    title: 'Swim: speed + race skills'
-    distance: 1700m
-    target: 12 × 50m fast (25 m sprint / 25 m easy), sighting, drafting on feet, deck-up starts
-    description: 'Open water or with a training partner when possible: practise swimming on someone''s feet and around buoys.'
-  - day: fri
-    sport: swim
-    title: Swim technique
-    description: 'Long, relaxed strokes. Drills: catch-up, fists, 6-kick switch.'
-    steps:
-    - label: Warm-up
-      distance: 400m
-      target: easy, mixed strokes
-    - label: Drills
-      repeat: 8
-      distance: 50m
-      target: catch-up / fists, 15s rest
-    - label: Main
-      repeat: 7
-      distance: 200m
-      target: CSS +6s/100m, 20s rest
-    - label: Cool-down
-      distance: 200m
   - day: sat
     sport: bike
-    title: Long ride
-    duration: 2h10
+    title: 'Brick: bike'
+    duration: 1h50
     target: Z2 with 4 × 10 min @ race effort (90–95% FTP)
+    description: 'Eat 60 g carbs/h. Go straight into the run: transition under 2 min.'
   - day: sat
     sport: run
-    title: Brick run off the bike
-    distance: 4.0km
-    target: straight off the bike · first km 3:48–3:54/km, then 3:30/km
-    description: Transition under 2 min. Quick cadence, relaxed shoulders.
+    title: 'Brick: run off the bike'
+    duration: 20min
+    target: first 5 min easy, then 3:30/km
   - day: sun
     sport: run
     title: Long run
-    distance: 13.5km
+    duration: 55min
     target: Z2 · 4:25–4:55/km
+  - day: sun
+    sport: swim
+    title: Swim endurance
+    distance: 1900m
+    target: steady CSS +4–6s/100m, bilateral breathing, sight every 6 strokes
+    description: Optional if the week has been heavy. Open water when possible from May.
 - week: 4
   focus: Race
   sessions:
@@ -501,6 +454,7 @@ weeks:
     title: Swim easy
     distance: 1500m
     target: relaxed, technique focus
+    description: Skip bootcamp this week.
   - day: fri
     sport: other
     title: Rest or 20 min jog
