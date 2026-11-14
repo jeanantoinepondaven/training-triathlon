@@ -22,7 +22,7 @@ assert.equal(activitySport("Walk"), null);
 assert.equal(eventType({ sport: "bike", title: "Indoor bike: threshold" }), "VirtualRide");
 
 assert.ok(workoutText({ sport: "bike", title: "Long ride", description: null, plan: { kind: "endurance", durationS: 9300, target: "Z2 with 4 × 10 min @ race effort (90–95% FTP)" } }).includes("- 2h35m Z2"));
-const files = ["block-05-build-1.yaml", "block-08-specific-1.yaml", "block-02-base-1.yaml"];
+const files = ["block-01-return.yaml", "block-02-holidays.yaml", "block-03-base-1.yaml", "block-06-build-1.yaml", "block-08-specific.yaml"];
 const seen = new Set<string>();
 for (const f of files) {
   const r = parseCycle(readFileSync(`plans/season-2026-27/${f}`, "utf8"));
@@ -34,7 +34,7 @@ for (const f of files) {
       assert.ok(/^- /m.test(text), `${w.title} has no steps:\n${text}`);
       for (const l of text.split("\n").filter((x) => x.startsWith("- "))) assert.ok(/\d+(h|m|s|km|mtr)\b/.test(l), `step without length in ${w.title}: ${l}`);
     }
-    if (ok && !seen.has(w.title) && /Track|Run: sprints|Swim: CSS|Bike: threshold|Indoor bike: VO2|Long ride/.test(w.title)) {
+    if (ok && !seen.has(w.title) && /Track|uphill|Brick|Noon jog|Swim: CSS|Bike: threshold|Long run/.test(w.title)) {
       seen.add(w.title);
       console.log(`\n=== ${w.title} (${eventType(w)}) ===\n${text}`);
     }
